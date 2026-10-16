@@ -1,0 +1,17 @@
+export const RoutePaths = {
+  login: '/login',
+  changePassword: '/change-password',
+  home: '/',
+  capture: '/capture',
+  classes: '/classes',
+  classDetail: (id: string) => `/classes/${id}`,
+  exams: '/exams',
+  examDetail: (id: string) => `/exams/${id}`,
+  examReview: (id: string) => `/exams/${id}/review`,
+  submissionReview: (examId: string, submissionId: string) => `/exams/${examId}/review/${submissionId}`,
+  examReport: (id: string) => `/exams/${id}/report`,
+  users: '/admin/users',
+  roles: '/admin/roles',
+  auditLogs: '/admin/audit-logs',
+  reportTemplate: '/admin/report-template',
+} as const;

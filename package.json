@@ -1,0 +1,33 @@
+{
+  "name": "missngoc-grader",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web app chấm bài trắc nghiệm cho trung tâm tiếng Anh MissNgoc",
+  "packageManager": "npm@11.12.1",
+  "workspaces": [
+    "missngoc.webapp/packages/*",
+    "missngoc.webapp/apps/*",
+    "missngoc.services/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test:unit",
+    "dev": "npm run db:up && turbo run dev",
+    "db:up": "docker compose -f deploy/docker-compose.dev.yml up -d",
+    "db:down": "docker compose -f deploy/docker-compose.dev.yml down",
+    "db:setup": "npm run db:setup -w missngoc.api",
+    "db:demo": "npm run db:demo -w missngoc.api",
+    "api:dev": "npm run start:dev -w missngoc.api",
+    "worker:dev": "npm run worker:dev -w missngoc.api",
+    "web:dev": "npm run dev -w missngoc.web",
+    "poc": "npm run poc -w missngoc.api --"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.3",
+    "typescript": "~5.9.3"
+  }
+}

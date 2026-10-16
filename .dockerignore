@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/.turbo
+**/.env
+**/data
+**/poc-samples
+**/poc-results
+.git
+.vscode
+missngoc.docs
+deploy/.env
+deploy/data
+**/*.tsbuildinfo

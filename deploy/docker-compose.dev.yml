@@ -1,0 +1,22 @@
+# Máy dev: chỉ chạy Postgres bằng Docker. NestJS và Vite chạy trực tiếp để có hot reload.
+# Chạy từ thư mục gốc: npm run db:up
+name: missngoc-dev
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: grader
+      POSTGRES_USER: grader
+      POSTGRES_PASSWORD: grader-dev
+    ports:
+      - "127.0.0.1:5432:5432" # chỉ mở cho chính máy dev
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grader -d grader"]
+      interval: 3s
+      retries: 20
+
+volumes:
+  pgdata-dev:

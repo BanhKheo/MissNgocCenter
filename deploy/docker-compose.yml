@@ -1,0 +1,87 @@
+# Máy chủ của trung tâm. Cài: docker compose up -d --build
+# Cập nhật: backup tay, đổi APP_VERSION trong .env (hoặc lấy code mới), chạy lại lệnh trên.
+name: missngoc-grader
+
+x-api: &api
+  image: missngoc/grader-api:${APP_VERSION:-latest}
+  build:
+    context: ..
+    dockerfile: missngoc.services/api/Dockerfile
+  env_file: .env
+  environment:
+    DATABASE_URL: postgresql://grader:${DB_PASSWORD}@db:5432/grader
+    UPLOAD_DIR: /data/uploads
+  volumes:
+    - ./data/uploads:/data/uploads # bind mount: thấy được trong Explorer, dễ backup
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: grader
+      POSTGRES_USER: grader
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data # named volume: nhanh hơn bind mount trên WSL2
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grader -d grader"]
+      interval: 5s
+      retries: 20
+    restart: unless-stopped
+    # Không khai báo ports: chỉ các container khác truy cập được db
+
+  migrate:
+    <<: *api
+    # Migrate rồi seed quyền và vai trò mặc định (idempotent)
+    command: ["sh", "-c", "npx prisma migrate deploy && node dist/scripts/seed-rbac.js"]
+    restart: "no"
+    depends_on:
+      db: { condition: service_healthy }
+
+  api:
+    <<: *api
+    command: ["node", "dist/main.js"]
+    environment:
+      DATABASE_URL: postgresql://grader:${DB_PASSWORD}@db:5432/grader
+      UPLOAD_DIR: /data/uploads
+      WORKER_IN_PROCESS: "false"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  worker:
+    <<: *api
+    command: ["node", "dist/worker.js"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  web:
+    image: missngoc/grader-web:${APP_VERSION:-latest}
+    build:
+      context: ..
+      dockerfile: missngoc.webapp/apps/web/Dockerfile
+    ports:
+      - "${WEB_PORT:-80}:80" # cổng duy nhất mở ra LAN; cổng 80 bị chiếm thì đặt WEB_PORT=8080
+    depends_on: [api]
+    restart: unless-stopped
+
+  backup:
+    image: postgres:17
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./data/backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          pg_dump -h db -U grader -d grader -Fc -f /backups/grader-$$(date +%F).dump
+          find /backups -name '*.dump' -mtime +30 -delete
+          sleep 86400
+        done
+    depends_on:
+      db: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  pgdata:

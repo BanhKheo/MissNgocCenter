@@ -1,0 +1,329 @@
+// MissNgoc Grader — schema dữ liệu (mục 9 tài liệu BA & Kiến trúc)
+// Tách 3 lớp: cái AI đọc được (extractions), cái được chốt sau duyệt (submission_answers.final_choice),
+// và điểm tính từ đó (results). Sửa đáp án hay sửa 1 câu chỉ cần tính lại, không gọi lại AI.
+
+generator client {
+  provider      = "prisma-client-js"
+  // native: máy dev Windows/macOS; debian-openssl-3.0.x: image node:22-slim trong Docker
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────── Tài khoản và RBAC (giống IUROADMAP, bỏ đăng ký) ─────────────
+
+enum AccountStatus {
+  ACTIVE
+  BANNED
+}
+
+model User {
+  id                 String        @id @default(uuid()) @db.Uuid
+  username           String        @unique
+  passwordHash       String        @map("password_hash")
+  fullName           String        @map("full_name")
+  roleId             String        @map("role_id") @db.Uuid
+  role               Role          @relation(fields: [roleId], references: [id])
+  status             AccountStatus @default(ACTIVE)
+  mustChangePassword Boolean       @default(true) @map("must_change_password")
+  failedLoginCount   Int           @default(0) @map("failed_login_count")
+  lockedUntil        DateTime?     @map("locked_until")
+  lastLoginAt        DateTime?     @map("last_login_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  teachingClasses Class[] @relation("ClassTeacher")
+
+  @@map("users")
+}
+
+model Role {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String       @unique
+  description String?
+  isSystem    Boolean      @default(false) @map("is_system")
+  users       User[]
+  permissions Permission[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model PermissionGroup {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String       @unique
+  permissions Permission[]
+
+  @@map("permission_groups")
+}
+
+model Permission {
+  id          String           @id @default(uuid()) @db.Uuid
+  name        String           @unique // mã quyền, ví dụ GRD.USER
+  displayName String           @map("display_name")
+  groupId     String?          @map("group_id") @db.Uuid
+  group       PermissionGroup? @relation(fields: [groupId], references: [id])
+  roles       Role[]
+
+  @@map("permissions")
+}
+
+// ───────────── Lớp, học sinh ─────────────
+
+enum ClassStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model Class {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String
+  level       String?
+  teacherId   String?      @map("teacher_id") @db.Uuid
+  teacher     User?        @relation("ClassTeacher", fields: [teacherId], references: [id])
+  startDate   DateTime?    @map("start_date") @db.Date
+  endDate     DateTime?    @map("end_date") @db.Date
+  status      ClassStatus  @default(ACTIVE)
+  enrollments Enrollment[]
+  exams       Exam[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("classes")
+}
+
+model Student {
+  id          String       @id @default(uuid()) @db.Uuid
+  studentCode String       @unique @map("student_code")
+  fullName    String       @map("full_name")
+  dob         DateTime?    @db.Date
+  parentPhone String?      @map("parent_phone")
+  enrollments Enrollment[]
+  submissions Submission[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("students")
+}
+
+// Học sinh chuyển lớp vẫn giữ lịch sử điểm: không xoá enrollment, chỉ đặt left_at
+model Enrollment {
+  id        String    @id @default(uuid()) @db.Uuid
+  classId   String    @map("class_id") @db.Uuid
+  class     Class     @relation(fields: [classId], references: [id])
+  studentId String    @map("student_id") @db.Uuid
+  student   Student   @relation(fields: [studentId], references: [id])
+  joinedAt  DateTime  @default(now()) @map("joined_at")
+  leftAt    DateTime? @map("left_at")
+
+  @@index([classId, leftAt])
+  @@map("enrollments")
+}
+
+// ───────────── Bài kiểm tra, đáp án ─────────────
+
+enum ExamStatus {
+  OPEN
+  ARCHIVED
+}
+
+model Exam {
+  id            String       @id @default(uuid()) @db.Uuid
+  classId       String       @map("class_id") @db.Uuid
+  class         Class        @relation(fields: [classId], references: [id])
+  title         String
+  examDate      DateTime     @map("exam_date") @db.Date
+  questionCount Int          @map("question_count")
+  options       String       @default("ABCD") // ABCD hoặc ABCDE
+  maxScore      Decimal      @default(10) @map("max_score") @db.Decimal(5, 2)
+  layoutHint    String?      @map("layout_hint") // ví dụ: 40 câu, 2 cột, mỗi câu 4 ô A–D
+  status        ExamStatus   @default(OPEN)
+  createdById   String?      @map("created_by") @db.Uuid
+  answerKeys    AnswerKey[]
+  submissions   Submission[]
+  gradingRuns   GradingRun[]
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  @@index([classId])
+  @@map("exams")
+}
+
+// Mỗi mã đề một bộ đáp án. version_code rỗng = mã đề chung (bài chỉ có 1 mã đề)
+model AnswerKey {
+  id          String          @id @default(uuid()) @db.Uuid
+  examId      String          @map("exam_id") @db.Uuid
+  exam        Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  versionCode String          @default("") @map("version_code")
+  items       AnswerKeyItem[]
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@unique([examId, versionCode])
+  @@map("answer_keys")
+}
+
+enum QuestionKind {
+  choice // trắc nghiệm: correct là các chữ cái đúng
+  text // điền từ: correct là các cách viết được chấp nhận
+}
+
+model AnswerKeyItem {
+  answerKeyId String       @map("answer_key_id") @db.Uuid
+  answerKey   AnswerKey    @relation(fields: [answerKeyId], references: [id], onDelete: Cascade)
+  questionNo  Int          @map("question_no")
+  kind        QuestionKind @default(choice) // các mã đề của một bài phải cùng loại câu
+  correct     String[] // trắc nghiệm: nhiều chữ khi đề lỗi; điền từ: "eight hours", "8 hours"
+  points      Decimal      @db.Decimal(6, 3)
+
+  @@id([answerKeyId, questionNo])
+  @@map("answer_key_items")
+}
+
+// ───────────── Bài nộp và chấm ─────────────
+
+enum SubmissionStatus {
+  NO_IMAGE
+  UPLOADED
+  QUEUED
+  PROCESSING
+  NEEDS_REVIEW
+  GRADED
+  FAILED
+  ABSENT
+}
+
+enum MarkStatus {
+  clear
+  blank
+  multiple
+  unclear
+}
+
+model Submission {
+  id              String             @id @default(uuid()) @db.Uuid
+  examId          String             @map("exam_id") @db.Uuid
+  exam            Exam               @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId       String             @map("student_id") @db.Uuid
+  student         Student            @relation(fields: [studentId], references: [id])
+  versionCode     String?            @map("version_code")
+  status          SubmissionStatus   @default(NO_IMAGE)
+  studentNameRead String?            @map("student_name_read")
+  nameMismatch    Boolean            @default(false) @map("name_mismatch")
+  lastError       String?            @map("last_error")
+  version         Int                @default(0) // khoá lạc quan khi sửa điểm tay
+  images          SubmissionImage[]
+  extractions     Extraction[]
+  answers         SubmissionAnswer[]
+  result          Result?
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  @@unique([examId, studentId])
+  @@index([examId, status])
+  @@map("submissions")
+}
+
+model SubmissionImage {
+  id           String     @id @default(uuid()) @db.Uuid
+  submissionId String     @map("submission_id") @db.Uuid
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  filePath     String     @map("file_path")
+  mimeType     String     @map("mime_type")
+  sizeBytes    Int        @map("size_bytes")
+  sha256       String
+  pageNo       Int        @default(1) @map("page_no")
+  uploadedById String?    @map("uploaded_by") @db.Uuid
+  uploadedAt   DateTime   @default(now()) @map("uploaded_at")
+
+  @@index([submissionId])
+  @@map("submission_images")
+}
+
+// Lưu nguyên kết quả AI để truy vết và tính chi phí
+model Extraction {
+  id           String     @id @default(uuid()) @db.Uuid
+  submissionId String     @map("submission_id") @db.Uuid
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  engine       String
+  model        String
+  promptVersion String    @map("prompt_version")
+  rawJson      Json       @map("raw_json")
+  inputTokens  Int?       @map("input_tokens")
+  outputTokens Int?       @map("output_tokens")
+  durationMs   Int        @map("duration_ms")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@index([submissionId])
+  @@map("extractions")
+}
+
+model SubmissionAnswer {
+  submissionId   String     @map("submission_id") @db.Uuid
+  submission     Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  questionNo     Int        @map("question_no")
+  // Câu điền từ: detected_choice và final_choice là chữ học sinh viết
+  detectedChoice String?    @map("detected_choice")
+  status         MarkStatus
+  finalChoice    String?    @map("final_choice") // bằng detected_choice trừ khi có người sửa
+  isCorrect      Boolean?   @map("is_correct")
+  reviewedById   String?    @map("reviewed_by") @db.Uuid
+  reviewedAt     DateTime?  @map("reviewed_at")
+
+  @@id([submissionId, questionNo])
+  @@map("submission_answers")
+}
+
+// Luôn tính lại được từ final_choice và đáp án
+model Result {
+  submissionId String     @id @map("submission_id") @db.Uuid
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  correctCount Int        @map("correct_count")
+  score        Decimal    @db.Decimal(5, 2)
+  gradedAt     DateTime   @default(now()) @map("graded_at")
+
+  @@map("results")
+}
+
+model GradingRun {
+  id            String   @id @default(uuid()) @db.Uuid
+  examId        String   @map("exam_id") @db.Uuid
+  exam          Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  regrade       Boolean  @default(false)
+  submissionIds String[] @map("submission_ids")
+  createdById   String?  @map("created_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([examId])
+  @@map("grading_runs")
+}
+
+// ───────────── Cấu hình, nhật ký ─────────────
+
+model ReportTemplate {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  config    Json
+  isDefault Boolean  @default(false) @map("is_default")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("report_templates")
+}
+
+model AuditLog {
+  id       String   @id @default(uuid()) @db.Uuid
+  actorId  String?  @map("actor_id") @db.Uuid
+  action   String
+  entity   String
+  entityId String?  @map("entity_id")
+  before   Json?
+  after    Json?
+  at       DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([at])
+  @@map("audit_logs")
+}
