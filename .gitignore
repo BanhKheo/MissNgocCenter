@@ -16,3 +16,7 @@ missngoc.services/api/data/
 poc-samples/
 poc-results/
 *.tsbuildinfo
+
+# ExamDSL
+__pycache__/
+missngoc.dsl/build/

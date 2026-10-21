@@ -2,11 +2,10 @@
 # Cập nhật: backup tay, đổi APP_VERSION trong .env (hoặc lấy code mới), chạy lại lệnh trên.
 name: missngoc-grader
 
+# api, worker, migrate dùng chung một image; chỉ migrate khai báo build (xem bên dưới)
 x-api: &api
   image: missngoc/grader-api:${APP_VERSION:-latest}
-  build:
-    context: ..
-    dockerfile: missngoc.services/api/Dockerfile
+  pull_policy: never # image build tại chỗ hoặc nạp bằng docker load, không có trên Docker Hub
   env_file: .env
   environment:
     DATABASE_URL: postgresql://grader:${DB_PASSWORD}@db:5432/grader
@@ -33,6 +32,10 @@ services:
 
   migrate:
     <<: *api
+    build:
+      context: ..
+      dockerfile: missngoc.services/api/Dockerfile
+    pull_policy: missing # đã có image (build trước hoặc docker load) thì dùng luôn, chưa có thì build
     # Migrate rồi seed quyền và vai trò mặc định (idempotent)
     command: ["sh", "-c", "npx prisma migrate deploy && node dist/scripts/seed-rbac.js"]
     restart: "no"
@@ -62,7 +65,14 @@ services:
       dockerfile: missngoc.webapp/apps/web/Dockerfile
     ports:
       - "${WEB_PORT:-80}:80" # cổng duy nhất mở ra LAN; cổng 80 bị chiếm thì đặt WEB_PORT=8080
-    depends_on: [api]
+    depends_on: [api, dsl]
+    restart: unless-stopped
+
+  # Trình biên dịch ExamDSL cho trang Soạn đề; chỉ web (Nginx) gọi tới, không mở cổng ra LAN
+  dsl:
+    image: missngoc/grader-dsl:${APP_VERSION:-latest}
+    build:
+      context: ../missngoc.dsl
     restart: unless-stopped
 
   backup:

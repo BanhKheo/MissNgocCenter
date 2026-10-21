@@ -1,0 +1,10 @@
+// E135: Nhãn xếp loại quá dài
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  key { 1-4 A B C D }
+}
+report {
+  band "Học sinh có kết quả rất xuất sắc trong kỳ" >= 8 fill #C6EFCE
+  band "Cần cố gắng" else fill #FFC7CE
+}

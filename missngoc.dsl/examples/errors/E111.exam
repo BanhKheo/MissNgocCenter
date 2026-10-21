@@ -1,0 +1,6 @@
+// E111: Câu vượt quá số câu
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  key { 1-5 A B C D A }
+}

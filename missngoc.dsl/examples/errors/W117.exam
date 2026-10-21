@@ -1,0 +1,7 @@
+// W117: Tổng điểm lệch sau làm tròn (cảnh báo)
+exam "Kiểm tra" {
+  questions 14
+  options A B C D
+  max 1
+  key { 1-14 A B C D A B C D A B C D A B }
+}

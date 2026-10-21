@@ -17,6 +17,7 @@ import { CapturePage } from './views/capture/CapturePage';
 import { ClassDetailPage } from './views/classes/ClassDetailPage';
 import { ClassListPage } from './views/classes/ClassListPage';
 import { ExamDetailPage } from './views/exams/ExamDetailPage';
+import { ExamDslPage } from './views/exams/ExamDslPage';
 import { ExamListPage } from './views/exams/ExamListPage';
 import { GradebookPage } from './views/gradebook/GradebookPage';
 import { ReportPage } from './views/report/ReportPage';
@@ -57,7 +58,9 @@ export function App() {
           <Route path="classes/:id" element={<RequirePermission any={VIEW_CLASSES}><ClassDetailPage /></RequirePermission>} />
           <Route path="classes/:id/gradebook" element={<RequirePermission any={VIEW_CLASSES}><GradebookPage /></RequirePermission>} />
           <Route path="exams" element={<RequirePermission any={VIEW_EXAMS}><ExamListPage /></RequirePermission>} />
+          <Route path="exams/new/dsl" element={<RequirePermission any={[PMS.EXAM_AD]}><ExamDslPage /></RequirePermission>} />
           <Route path="exams/:id" element={<RequirePermission any={VIEW_EXAMS}><ExamDetailPage /></RequirePermission>} />
+          <Route path="exams/:id/dsl" element={<RequirePermission any={[PMS.EXAM_AD]}><ExamDslPage /></RequirePermission>} />
           <Route path="exams/:id/review" element={<RequirePermission any={[PMS.GRD_USER]}><ReviewQueuePage /></RequirePermission>} />
           <Route
             path="exams/:id/review/:submissionId"

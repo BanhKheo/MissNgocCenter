@@ -1,0 +1,7 @@
+// E118: Hệ số bằng 0
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  section Grammar 1-4 weight 0
+  key { 1-4 A B C D }
+}

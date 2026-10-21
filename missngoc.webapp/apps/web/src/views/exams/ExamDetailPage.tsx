@@ -1,4 +1,4 @@
-import { BookOutlined, CameraOutlined, DeleteOutlined, FormOutlined, TableOutlined } from '@ant-design/icons';
+import { BookOutlined, CameraOutlined, CodeOutlined, DeleteOutlined, FormOutlined, TableOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { App, Button, Card, Col, Descriptions, Flex, Row, Statistic, Table, Tag } from 'antd';
 import { useState } from 'react';
@@ -172,6 +172,9 @@ export function ExamDetailPage() {
               <Flex gap={8} wrap style={{ marginTop: 8 }}>
                 <EditButton text="Nhập đáp án" onClick={() => setEditKeys(true)} />
                 <ImportExcelButton onClick={() => setImportKeys(true)} />
+                <Button icon={<CodeOutlined />} onClick={() => navigate(RoutePaths.examDsl(id))}>
+                  Soạn bằng ExamDSL
+                </Button>
               </Flex>
             )}
           </Card>

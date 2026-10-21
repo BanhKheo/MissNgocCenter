@@ -1,0 +1,6 @@
+// E122: Số đáp án không khớp khoảng câu
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  key { 1-4 A C B }
+}

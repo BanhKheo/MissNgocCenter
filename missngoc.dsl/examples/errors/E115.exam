@@ -1,0 +1,8 @@
+// E115: Trộn weight và score
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  section Grammar 1-2 weight 2
+  section Reading 3-4 score 5
+  key { 1-4 A B C D }
+}

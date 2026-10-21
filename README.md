@@ -9,6 +9,8 @@ Web app chấm bài trắc nghiệm và điền từ cho trung tâm tiếng Anh.
 | Tài liệu | Nội dung |
 | --- | --- |
 | [missngoc.docs/ba-architecture.md](missngoc.docs/ba-architecture.md) | BA (use case, yêu cầu chức năng, mức độ hữu ích, rủi ro) và kiến trúc (stack, data model, REST API, triển khai LAN, Docker, lộ trình) |
+| [missngoc.docs/api-pricing.md](missngoc.docs/api-pricing.md) | So sánh giá API đọc bài: Gemini, Claude, ChatGPT; chi phí mỗi bài và mỗi tháng (có số token đo thật) |
+| [missngoc.docs/deploy-center.md](missngoc.docs/deploy-center.md) | Cài lên máy trung tâm để thử ở văn phòng: 2 cách đưa bản cài, kiểm tra sau cài, cập nhật, sao lưu, sự cố thường gặp |
 | [missngoc.docs/finetune-analysis.md](missngoc.docs/finetune-analysis.md) | Có nên fine-tune không, chọn model nào (Vertex AI Gemini, Qwen3-VL tự host), chi phí, cách dùng dữ liệu hằng ngày, lộ trình |
 | [Bản online trên Claude Docs](https://claude.ai/code/artifact/097eaa2d-8d33-4a9a-a497-222c0896e2f8) | Cùng nội dung, góp ý bằng bình luận |
 
@@ -37,19 +39,22 @@ missngoc-grader/
 
 ## Chạy trên máy dev
 
-Cần Node.js 22+ và Docker Desktop.
+Cần Node.js 22+, Docker Desktop và Python 3.12 (cho trình biên dịch ExamDSL).
 
 ```bash
 npm install
+pip install -r missngoc.dsl/requirements.txt    # trình biên dịch ExamDSL
 npm run db:up                                   # Postgres trong Docker, chỉ mở cho máy này
 cp missngoc.services/api/.env.example missngoc.services/api/.env   # điền JWT_SECRET
 npm run db:setup                                # migrate, seed quyền, tạo tài khoản admin
-npm run dev                                     # Postgres + API (kèm worker) + web: http://localhost:5173
+npm run dev                                     # Postgres + API (kèm worker) + ExamDSL (:8010) + web: http://localhost:5173
 ```
+
+Kéo code mới có migration thì chạy lại `npm run db:setup` (hoặc `npx prisma migrate deploy` trong `missngoc.services/api`).
 
 Đăng nhập `admin` với `ADMIN_PASSWORD` trong `.env`, đổi mật khẩu, rồi cấp tài khoản cho giáo vụ. Điện thoại cùng Wi-Fi mở `http://<IP máy dev>:5173`.
 
-Kiểm tra: `npm run test` (unit test chấm điểm), `npm run typecheck`.
+Kiểm tra: `npm run test` (unit test chấm điểm và test ExamDSL), `npm run typecheck`.
 
 ## Thử AI đọc 1–2 bài bằng Gemini (miễn phí)
 
@@ -77,14 +82,14 @@ Trong `truth.csv`, câu điền từ ghi đúng chữ học sinh viết, kể c�
 
 ## Cài lên máy trung tâm
 
+Hướng dẫn đầy đủ (chuẩn bị máy, 2 cách đưa bản cài, điền `.env`, mở LAN, kiểm tra, cập nhật, sao lưu, sự cố): [missngoc.docs/deploy-center.md](missngoc.docs/deploy-center.md). Tóm tắt khi máy có mã nguồn:
+
 ```bash
 cd deploy
-cp .env.example .env            # điền DB_PASSWORD, JWT_SECRET, API key, ADMIN_PASSWORD
-docker compose up -d --build    # cài lần đầu và mỗi lần cập nhật
+cp .env.example .env            # điền DB_PASSWORD, JWT_SECRET, API key, ADMIN_PASSWORD, PUBLIC_URL
+docker compose up -d --build    # cài lần đầu và mỗi lần cập nhật: web, api, worker, db, dsl, backup
 docker compose run --rm api node dist/scripts/bootstrap-admin.js   # tạo admin đầu tiên
 ```
-
-Sau đó mở cổng 80 trên Windows Firewall (mục 10 tài liệu) và in mã QR chứa `http://<IP máy chủ>`. Nếu cổng 80 đã bị chiếm (lệnh `netstat -ano | findstr :80` có kết quả), đặt `WEB_PORT=8080` trong `.env`, mở cổng 8080 và dùng `http://<IP máy chủ>:8080`.
 
 ## Lộ trình
 
@@ -97,7 +102,7 @@ Sau đó mở cổng 80 trên Windows Firewall (mục 10 tài liệu) và in mã
 
 ## Ý tưởng đồ án DSL (môn Nguyên lý ngôn ngữ lập trình)
 
-**Trạng thái:** mới là ý tưởng, chưa có code.
+**Trạng thái:** đã cài đặt trong [missngoc.dsl/](missngoc.dsl/README.md) và gắn vào app: trang **Soạn đề** (`/exams/:id/dsl`, nút "Soạn bằng ExamDSL" ở trang bài kiểm tra), và lối **tạo bài bằng ExamDSL** ngay trong hộp thoại Tạo bài kiểm tra. Thiết kế chi tiết (grammar, bảng lỗi, codegen): [missngoc.docs/examdsl-design.md](missngoc.docs/examdsl-design.md). Deck demo luồng sử dụng: [missngoc.docs/MissNgoc-Demo-Flow.pptx](missngoc.docs/MissNgoc-Demo-Flow.pptx).
 
 MissNgoc có sẵn đúng luồng mà một DSL cần: AI đọc ảnh bài làm thành JSON (`q`, `choice`, `text`, `status`), sau đó code so với đáp án và tính điểm. Hiện các quy tắc giáo viên hay muốn đổi (số câu, loại câu, đáp án, điểm từng phần, dải điểm, màu, khi nào phải duyệt) đang viết cứng trong code TypeScript và cấu hình JSON. DSL thay phần này bằng một file văn bản do admin tự viết.
 

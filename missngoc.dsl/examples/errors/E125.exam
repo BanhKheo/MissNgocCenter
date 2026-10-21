@@ -1,0 +1,6 @@
+// E125: Chữ cái ngoài bộ lựa chọn
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  key { 1-4 A B C E }
+}

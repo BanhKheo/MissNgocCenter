@@ -199,3 +199,11 @@ export class AnswerKeyPutRequestDto {
   @Type(() => AnswerKeyItemDto)
   items: AnswerKeyItemDto[];
 }
+
+/** Mã nguồn ExamDSL của bài. Trang soạn đề lưu lại để mở ra sửa tiếp */
+export class ExamDslPutRequestDto {
+  @ApiProperty({ example: 'exam "Kiểm tra Unit 5" { questions 20 options A B C D key { 1-20 ... } }' })
+  @IsString()
+  @MaxLength(100_000)
+  source: string;
+}

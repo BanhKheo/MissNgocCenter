@@ -1,0 +1,9 @@
+// E120: Mã đề chưa khai báo
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  versions 101 102
+  key 101 { 1-4 A B C D }
+  key 102 { 1-4 B C D A }
+  key 103 { 1-4 C D A B }
+}

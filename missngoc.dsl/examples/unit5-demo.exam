@@ -1,0 +1,35 @@
+// Kiểm tra Unit 5: 20 câu, dùng cho buổi demo trên app
+// Câu 9-12 là điền từ. Điểm theo phần: Grammar 3, Từ vựng 2, Reading 5
+exam "Kiểm tra Unit 5" {
+  questions 20
+  options   A B C D
+  max       10
+  layout    "1 trang, học sinh khoanh chữ cái và viết từ vào chỗ trống"
+
+  section Grammar   1-8      choice  score 3
+  section "Từ vựng" 9-12     text    score 2
+  section Reading   13-20    choice  score 5
+
+  key {
+    1-8    B A C D A B D C
+    9      "eight hours" / "8 hours"
+    10     "creativity"
+    11     "water"
+    12     "healthy"
+    13-20  C D A B/D B A C D
+  }
+}
+
+report {
+  band "Giỏi"        >= 8    fill #C6EFCE font #006100
+  band "Khá"         >= 6.5  fill #DDEBF7 font #1F4E78
+  band "Trung bình"  >= 5    fill #FFEB9C font #9C5700
+  band "Cần cố gắng" else    fill #FFC7CE font #9C0006
+}
+
+review {
+  flag "AI không chắc"  when answer.status in [unclear, multiple]
+  flag "Tên không khớp" when submission.nameMismatch
+  flag "Không rõ mã đề" when not submission.versionKnown
+  flag "Điểm sát ngưỡng Trung bình" when submission.score >= 4.75 and submission.score < 5
+}

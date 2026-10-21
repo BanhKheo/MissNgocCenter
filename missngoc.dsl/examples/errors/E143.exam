@@ -1,0 +1,10 @@
+// E143: Tên phần sai trong luật
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  section Reading 1-4
+  key { 1-4 A B C D }
+}
+review {
+  flag when answer.section == Readng and answer.status == unclear
+}

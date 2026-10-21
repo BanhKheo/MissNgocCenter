@@ -4,6 +4,7 @@ import { hasAnyPermission, PMS, SUBMISSION_STATUSES, type SubmissionStatus } fro
 import { AccessService } from '../../../common/access/access.service';
 import type { AuthUser } from '../../../common/auth-user';
 import { paged, skipTake } from '../../../common/pagination';
+import { compareVietnameseNames } from '../../../common/text';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
 import type { ExamCreateRequestDto, ExamFilterRequestDto, ExamUpdateRequestDto } from '../dto/exam.dto';
@@ -118,6 +119,46 @@ export class ExamsService {
     });
     await this.audit.log({ actorId: actor.id, action: 'exam.update', entity: 'exam', entityId: id, before, after: dto });
     return this.get(actor, id);
+  }
+
+  /** Mã nguồn ExamDSL đã lưu; null nếu bài chưa soạn bằng ExamDSL */
+  async getDsl(actor: AuthUser, id: string) {
+    const exam = await this.access.assertExam(actor, id);
+    return { source: exam.dslSource };
+  }
+
+  async putDsl(actor: AuthUser, id: string, source: string) {
+    const before = await this.access.assertExam(actor, id);
+    await this.prisma.exam.update({ where: { id }, data: { dslSource: source } });
+    await this.audit.log({
+      actorId: actor.id,
+      action: 'exam.dsl',
+      entity: 'exam',
+      entityId: id,
+      before: { dslSource: before.dslSource },
+      after: { dslSource: source },
+    });
+    return { source };
+  }
+
+  /**
+   * Kết quả AI đọc gần nhất của từng bài, để trang soạn đề chạy thử luật duyệt trên bài thật.
+   * Định dạng giống data/manual-extractions/*.json mà bộ thông dịch ExamDSL đọc được.
+   */
+  async dslSheets(actor: AuthUser, id: string) {
+    await this.access.assertExam(actor, id);
+    const subs = await this.prisma.submission.findMany({
+      where: { examId: id, extractions: { some: {} } },
+      include: {
+        student: { select: { fullName: true } },
+        extractions: { orderBy: { createdAt: 'desc' }, take: 1, select: { rawJson: true } },
+      },
+    });
+    return {
+      submissions: subs
+        .map((s) => ({ studentName: s.student.fullName, raw: s.extractions[0].rawJson }))
+        .sort((a, b) => compareVietnameseNames(a.studentName, b.studentName)),
+    };
   }
 
   private toResponse(e: ExamRow, counts: StatusCounts) {

@@ -1,0 +1,11 @@
+// Starters 3 – Unit test: khớp dữ liệu mẫu của app (npm run db:demo)
+// 10 câu trắc nghiệm, một mã đề, không khai báo phần: mỗi câu 1 điểm
+exam "Starters 3 – Unit test" {
+  questions 10
+  options   A B C D
+  layout    "Đề có câu hỏi in sẵn A/B/C/D. Học sinh viết chữ cái trong bảng 'Your answers:' cuối trang."
+
+  key {
+    1-10  B B C D A B C D A B
+  }
+}

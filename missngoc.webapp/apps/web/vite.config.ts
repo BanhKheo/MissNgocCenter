@@ -16,6 +16,8 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': 'http://localhost:3000',
+      // Trình biên dịch ExamDSL (Python, missngoc.dsl): trang Soạn đề gọi /dsl/api/compile…
+      '/dsl': { target: 'http://localhost:8010', rewrite: (path) => path.replace(/^\/dsl/, '') },
     },
   },
   build: {

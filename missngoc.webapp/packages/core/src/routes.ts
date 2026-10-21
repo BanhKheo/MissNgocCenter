@@ -8,6 +8,8 @@ export const RoutePaths = {
   classGradebook: (id: string) => `/classes/${id}/gradebook`,
   exams: '/exams',
   examDetail: (id: string) => `/exams/${id}`,
+  examDsl: (id: string) => `/exams/${id}/dsl`,
+  examCreateDsl: '/exams/new/dsl',
   examReview: (id: string) => `/exams/${id}/review`,
   submissionReview: (examId: string, submissionId: string) => `/exams/${examId}/review/${submissionId}`,
   examReport: (id: string) => `/exams/${id}/report`,

@@ -1,0 +1,9 @@
+// E141: Sai kiểu khi so sánh
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  key { 1-4 A B C D }
+}
+review {
+  flag when answer.status == 3
+}

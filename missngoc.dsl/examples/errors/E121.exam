@@ -1,0 +1,7 @@
+// E121: Mã đề chưa có đáp án
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  versions 101 102
+  key 101 { 1-4 A B C D }
+}

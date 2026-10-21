@@ -1,0 +1,6 @@
+// E110: Khoảng câu bị ngược
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  key { 4-1 D C B A }
+}

@@ -1,0 +1,6 @@
+// E100: Lỗi cú pháp: F không phải chữ cái lựa chọn
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  key { 1-4 A C F D }
+}

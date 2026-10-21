@@ -7,7 +7,8 @@
   "workspaces": [
     "missngoc.webapp/packages/*",
     "missngoc.webapp/apps/*",
-    "missngoc.services/*"
+    "missngoc.services/*",
+    "missngoc.dsl"
   ],
   "engines": {
     "node": ">=20.0.0"
@@ -24,7 +25,8 @@
     "api:dev": "npm run start:dev -w missngoc.api",
     "worker:dev": "npm run worker:dev -w missngoc.api",
     "web:dev": "npm run dev -w missngoc.web",
-    "poc": "npm run poc -w missngoc.api --"
+    "poc": "npm run poc -w missngoc.api --",
+    "dsl:dev": "npm run dev -w missngoc.dsl"
   },
   "devDependencies": {
     "turbo": "^2.5.3",

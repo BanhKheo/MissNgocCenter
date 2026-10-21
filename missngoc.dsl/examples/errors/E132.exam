@@ -1,0 +1,10 @@
+// E132: Màu sai dạng
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  key { 1-4 A B C D }
+}
+report {
+  band "Giỏi" >= 8 fill #C6EFC
+  band "Cần cố gắng" else fill #FFC7CE
+}

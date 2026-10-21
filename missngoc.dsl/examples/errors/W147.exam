@@ -1,0 +1,9 @@
+// W147: Luật luôn đúng (cảnh báo)
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  key { 1-4 A B C D }
+}
+review {
+  flag "Duyệt hết" when true
+}

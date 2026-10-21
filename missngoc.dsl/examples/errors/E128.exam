@@ -1,0 +1,7 @@
+// E128: Đáp án điền từ để trống
+exam "Kiểm tra" {
+  questions 4
+  options A B C D
+  section Vocab 1-4 text
+  key { 1-4 "a" "b" "c" "" }
+}

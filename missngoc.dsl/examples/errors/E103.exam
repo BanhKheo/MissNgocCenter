@@ -1,0 +1,6 @@
+// E103: Bộ lựa chọn không hợp lệ
+exam "Kiểm tra" {
+  questions 4
+  options A B C
+  key { 1-4 A B C D }
+}

@@ -1,7 +1,9 @@
-import { App, DatePicker, Form, Input, InputNumber, Modal, Segmented, Select } from 'antd';
+import { CodeOutlined } from '@ant-design/icons';
+import { App, Button, DatePicker, Form, Input, InputNumber, Modal, Segmented, Select } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useEffect } from 'react';
-import { GRADING_MODE_LABEL, PMS, type GradingMode } from '@missngoc/core';
+import { useNavigate } from 'react-router-dom';
+import { GRADING_MODE_LABEL, PMS, RoutePaths, type GradingMode } from '@missngoc/core';
 import { errorMessage, patch, post } from '../../api/client';
 import { useCategories, useClassOptions } from '../../api/queries';
 import type { ExamRow } from '../../api/types';
@@ -39,6 +41,7 @@ export function ExamFormModal({
   onSaved: (e: ExamRow) => void;
 }) {
   const { message } = App.useApp();
+  const navigate = useNavigate();
   const [form] = Form.useForm<Values>();
   const classes = useClassOptions();
   const categories = useCategories();
@@ -102,8 +105,37 @@ export function ExamFormModal({
     }
   };
 
+  /** Tạo bài AI bằng file đề ExamDSL: số câu, đáp án, thang điểm soạn trong file; lớp, ngày, loại bài mang theo */
+  const openDsl = async () => {
+    const v = await form.validateFields(['classId', 'examDate']);
+    const all = form.getFieldsValue();
+    const q = new URLSearchParams({ classId: v.classId, date: v.examDate.format('YYYY-MM-DD') });
+    if (all.categoryId) q.set('categoryId', all.categoryId);
+    if (all.title) q.set('title', all.title);
+    onClose();
+    navigate(`${RoutePaths.examCreateDsl}?${q.toString()}`);
+  };
+
   return (
-    <Modal open={open} title={value ? 'Sửa bài kiểm tra' : 'Tạo bài kiểm tra'} onCancel={onClose} onOk={submit} okText="Lưu" cancelText="Huỷ" destroyOnHidden>
+    <Modal
+      open={open}
+      title={value ? 'Sửa bài kiểm tra' : 'Tạo bài kiểm tra'}
+      onCancel={onClose}
+      destroyOnHidden
+      footer={
+        <>
+          <Button onClick={onClose}>Huỷ</Button>
+          {!value && !manual && canAi && (
+            <Button icon={<CodeOutlined />} onClick={() => void openDsl()}>
+              Soạn bằng ExamDSL
+            </Button>
+          )}
+          <Button type="primary" onClick={() => void submit()}>
+            Lưu
+          </Button>
+        </>
+      }
+    >
       <Form form={form} layout="vertical" requiredMark="optional">
         <Form.Item name="classId" label="Lớp" rules={[{ required: true, message: 'Chọn lớp' }]}>
           <Select

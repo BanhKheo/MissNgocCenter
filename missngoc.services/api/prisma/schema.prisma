@@ -168,6 +168,7 @@ model Exam {
   options       String              @default("ABCD") // ABCD hoặc ABCDE
   maxScore      Decimal             @default(10) @map("max_score") @db.Decimal(5, 2)
   layoutHint    String?             @map("layout_hint") // ví dụ: 40 câu, 2 cột, mỗi câu 4 ô A–D
+  dslSource     String?             @map("dsl_source") // mã nguồn ExamDSL (.exam) khi đề soạn bằng ExamDSL, xem missngoc.dsl
   status        ExamStatus          @default(OPEN)
   createdById   String?             @map("created_by") @db.Uuid
   answerKeys    AnswerKey[]

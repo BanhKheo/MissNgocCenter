@@ -21,6 +21,14 @@ export const palette = {
   uncertainBorder: '#F0B400',
   errorRow: '#FFF1F0',
   imageBg: '#FAFAFA',
+  // Tô màu mã nguồn ExamDSL ở trang Soạn đề
+  codeKeyword: '#0F766E',
+  codeString: '#9A3412',
+  codeNumber: '#1D4ED8',
+  codeLetter: '#7C3AED',
+  codeColor: '#BE185D',
+  codeComment: '#9CA3AF',
+  codeErrorBg: 'rgba(192, 57, 43, 0.08)',
 } as const;
 
 export const antdTheme: ThemeConfig = {

@@ -20,7 +20,7 @@ import { PMS } from '@missngoc/core';
 import type { AuthUser } from '../../../common/auth-user';
 import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import { MAX_IMPORT_BYTES } from '../../imports/workbook';
-import { AnswerKeyPutRequestDto, ExamCreateRequestDto, ExamFilterRequestDto, ExamUpdateRequestDto } from '../dto/exam.dto';
+import { AnswerKeyPutRequestDto, ExamCreateRequestDto, ExamDslPutRequestDto, ExamFilterRequestDto, ExamUpdateRequestDto } from '../dto/exam.dto';
 import { AnswerKeysService } from '../services/answer-keys.service';
 import { ExamsService } from '../services/exams.service';
 
@@ -58,6 +58,26 @@ export class ExamsController {
   @RequirePermissions(PMS.EXAM_AD, PMS.ATT_USER)
   update(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: ExamUpdateRequestDto) {
     return this.exams.update(user, id, body);
+  }
+
+  /** Mã nguồn ExamDSL của bài (trang Soạn đề) */
+  @Get(':id/dsl')
+  @RequirePermissions(PMS.EXAM_AD)
+  getDsl(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.exams.getDsl(user, id);
+  }
+
+  @Put(':id/dsl')
+  @RequirePermissions(PMS.EXAM_AD)
+  putDsl(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: ExamDslPutRequestDto) {
+    return this.exams.putDsl(user, id, body.source);
+  }
+
+  /** Kết quả AI đọc của các bài đã chấm, để chạy thử luật duyệt */
+  @Get(':id/dsl/sheets')
+  @RequirePermissions(PMS.EXAM_AD)
+  dslSheets(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.exams.dslSheets(user, id);
   }
 
   @Get(':id/answer-keys')

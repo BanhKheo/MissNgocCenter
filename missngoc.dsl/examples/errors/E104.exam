@@ -1,0 +1,6 @@
+// E104: Số câu vượt giới hạn
+exam "Kiểm tra" {
+  questions 250
+  options A B C D
+  key { 1-4 A B C D }
+}
