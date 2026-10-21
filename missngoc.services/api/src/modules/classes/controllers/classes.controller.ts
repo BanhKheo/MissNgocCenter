@@ -6,7 +6,7 @@ import { CurrentUser, RequirePermissions } from '../../../common/decorators';
 import { ClassCreateRequestDto, ClassFilterRequestDto, ClassUpdateRequestDto } from '../dto/class.dto';
 import { ClassesService } from '../services/classes.service';
 
-const VIEW_CLASSES = [PMS.CLS_AD, PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER];
+const VIEW_CLASSES = [PMS.CLS_AD, PMS.ATT_USER, PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER];
 
 @ApiTags('classes')
 @ApiBearerAuth()

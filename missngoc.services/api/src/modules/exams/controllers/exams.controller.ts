@@ -24,7 +24,7 @@ import { AnswerKeyPutRequestDto, ExamCreateRequestDto, ExamFilterRequestDto, Exa
 import { AnswerKeysService } from '../services/answer-keys.service';
 import { ExamsService } from '../services/exams.service';
 
-const VIEW_EXAMS = [PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER, PMS.CLS_AD];
+const VIEW_EXAMS = [PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER, PMS.CLS_AD, PMS.ATT_USER];
 
 @ApiTags('exams')
 @ApiBearerAuth()
@@ -47,14 +47,15 @@ export class ExamsController {
     return this.exams.get(user, id);
   }
 
+  // ATT.USER chỉ tạo/sửa được bài "Nhập điểm tay"; service kiểm tra tiếp
   @Post()
-  @RequirePermissions(PMS.EXAM_AD)
+  @RequirePermissions(PMS.EXAM_AD, PMS.ATT_USER)
   create(@CurrentUser() user: AuthUser, @Body() body: ExamCreateRequestDto) {
     return this.exams.create(user, body);
   }
 
   @Patch(':id')
-  @RequirePermissions(PMS.EXAM_AD)
+  @RequirePermissions(PMS.EXAM_AD, PMS.ATT_USER)
   update(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: ExamUpdateRequestDto) {
     return this.exams.update(user, id, body);
   }

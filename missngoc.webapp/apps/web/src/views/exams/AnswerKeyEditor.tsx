@@ -134,7 +134,7 @@ export function AnswerKeyEditor({
       const res = await put<{ rescored: number; needRegrade: number }>(`/exams/${exam.id}/answer-keys/${code || DEFAULT_VERSION_URL_PARAM}`, {
         items: grid.map((c, i) => ({ q: i + 1, kind: c.kind, correct: c.kind === 'text' ? splitTextAnswers(c.text) : c.correct })),
       });
-      if (res.needRegrade) message.warning(`Đã lưu đáp án. Có câu đổi loại nên ${res.needRegrade} bài cần chấm lại: bấm Generate`, 8);
+      if (res.needRegrade) message.warning(`Đã lưu đáp án. Có câu đổi loại nên ${res.needRegrade} bài cần chấm lại: bấm Chấm bài mới`, 8);
       else message.success(res.rescored ? `Đã lưu đáp án và chấm lại ${res.rescored} bài` : 'Đã lưu đáp án');
       onSaved();
       onClose();
@@ -201,7 +201,7 @@ export function AnswerKeyEditor({
       <div className="key-grid">
         {grid.map((cell, i) => (
           <Flex key={i} align="center" gap={4}>
-            <span style={{ width: 28, flex: 'none', textAlign: 'right', color: isFilled(cell) ? undefined : '#c0392b' }}>{i + 1}.</span>
+            <span className={isFilled(cell) ? 'key-no' : 'key-no text-danger'}>{i + 1}.</span>
             {cell.kind === 'choice' ? (
               options.map((l) => (
                 <Button key={l} size="small" type={cell.correct.includes(l) ? 'primary' : 'default'} onClick={() => toggle(i, l)} style={{ width: 26, padding: 0 }}>

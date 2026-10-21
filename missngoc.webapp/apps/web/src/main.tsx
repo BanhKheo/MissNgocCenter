@@ -10,8 +10,10 @@ import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
 import { store } from './store';
 import './styles.css';
+import { antdTheme, applyCssVars } from './theme';
 
 dayjs.locale('vi');
+applyCssVars();
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,13 +25,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <ConfigProvider
-          locale={viVN}
-          theme={{
-            token: { colorPrimary: '#1F4E78', borderRadius: 8, fontSize: 15 },
-            components: { Button: { controlHeightLG: 48 } },
-          }}
-        >
+        <ConfigProvider locale={viVN} theme={antdTheme}>
           <AntApp>
             <BrowserRouter>
               <App />

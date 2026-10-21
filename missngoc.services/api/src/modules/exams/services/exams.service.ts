@@ -1,6 +1,6 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { SUBMISSION_STATUSES, type SubmissionStatus } from '@missngoc/core';
+import { hasAnyPermission, PMS, SUBMISSION_STATUSES, type SubmissionStatus } from '@missngoc/core';
 import { AccessService } from '../../../common/access/access.service';
 import type { AuthUser } from '../../../common/auth-user';
 import { paged, skipTake } from '../../../common/pagination';
@@ -10,6 +10,7 @@ import type { ExamCreateRequestDto, ExamFilterRequestDto, ExamUpdateRequestDto }
 
 const examInclude = {
   class: { select: { id: true, name: true, teacherId: true } },
+  category: { select: { id: true, name: true, weight: true } },
   answerKeys: { include: { _count: { select: { items: true } } } },
 } satisfies Prisma.ExamInclude;
 
@@ -56,6 +57,10 @@ export class ExamsService {
   }
 
   async create(actor: AuthUser, dto: ExamCreateRequestDto) {
+    const manual = dto.gradingMode === 'MANUAL';
+    if (!manual && !hasAnyPermission(actor.permissions, [PMS.EXAM_AD])) {
+      throw new ForbiddenException('Bạn chỉ tạo được bài nhập điểm tay');
+    }
     const cls = await this.access.assertClass(actor, dto.classId);
     if (cls.status !== 'ACTIVE') throw new BadRequestException('Lớp đã lưu trữ');
     const exam = await this.prisma.exam.create({
@@ -63,10 +68,14 @@ export class ExamsService {
         classId: dto.classId,
         title: dto.title,
         examDate: new Date(dto.examDate),
-        questionCount: dto.questionCount,
-        options: dto.options,
+        gradingMode: manual ? 'MANUAL' : 'AI',
+        categoryId: dto.categoryId ?? null,
+        weight: dto.weight ?? null,
+        // Bài nhập điểm tay không có câu hỏi và đáp án
+        questionCount: manual ? 0 : dto.questionCount,
+        options: manual ? 'ABCD' : dto.options,
         maxScore: dto.maxScore ?? 10,
-        layoutHint: dto.layoutHint || null,
+        layoutHint: manual ? null : dto.layoutHint || null,
         createdById: actor.id,
       },
     });
@@ -76,6 +85,16 @@ export class ExamsService {
 
   async update(actor: AuthUser, id: string, dto: ExamUpdateRequestDto) {
     const before = await this.access.assertExam(actor, id);
+    if (before.gradingMode !== 'MANUAL' && !hasAnyPermission(actor.permissions, [PMS.EXAM_AD])) {
+      throw new ForbiddenException('Bạn chỉ sửa được bài nhập điểm tay');
+    }
+    if (before.gradingMode === 'MANUAL' &&(dto.questionCount !== undefined || dto.options !== undefined)) {
+      throw new BadRequestException('Bài nhập điểm tay không có số câu và bộ lựa chọn');
+    }
+    if (dto.maxScore !== undefined && before.gradingMode === 'MANUAL' && dto.maxScore !== Number(before.maxScore)) {
+      const over = await this.prisma.result.count({ where: { submission: { examId: id }, score: { gt: dto.maxScore } } });
+      if (over > 0) throw new ConflictException(`Có ${over} học sinh đã có điểm lớn hơn ${dto.maxScore}. Sửa điểm trước khi đổi thang điểm`);
+    }
     const changesShape =
       (dto.questionCount !== undefined && dto.questionCount !== before.questionCount) ||
       (dto.options !== undefined && dto.options !== before.options);
@@ -88,6 +107,8 @@ export class ExamsService {
       data: {
         title: dto.title,
         examDate: dto.examDate ? new Date(dto.examDate) : undefined,
+        categoryId: dto.categoryId,
+        weight: dto.weight,
         questionCount: dto.questionCount,
         options: dto.options,
         maxScore: dto.maxScore,
@@ -104,6 +125,11 @@ export class ExamsService {
       id: e.id,
       title: e.title,
       examDate: e.examDate,
+      gradingMode: e.gradingMode,
+      category: e.category ? { id: e.category.id, name: e.category.name, weight: Number(e.category.weight) } : null,
+      weight: e.weight === null ? null : Number(e.weight),
+      // Hệ số dùng khi tính điểm trung bình: riêng của bài, không có thì theo loại bài, không có loại thì 1
+      effectiveWeight: Number(e.weight ?? e.category?.weight ?? 1),
       questionCount: e.questionCount,
       options: e.options,
       maxScore: Number(e.maxScore),

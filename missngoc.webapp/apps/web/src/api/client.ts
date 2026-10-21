@@ -64,8 +64,8 @@ export async function upload<T>(url: string, file: Blob, fileName: string, onPro
 }
 
 /** Tải file (Excel, ảnh) kèm token */
-export async function downloadBlob(url: string): Promise<{ blob: Blob; fileName: string | null }> {
-  const res = await http.get<Blob>(url, { responseType: 'blob', timeout: 120_000 });
+export async function downloadBlob(url: string, config?: Pick<AxiosRequestConfig, 'params'>): Promise<{ blob: Blob; fileName: string | null }> {
+  const res = await http.get<Blob>(url, { ...config, responseType: 'blob', timeout: 120_000 });
   const cd = String(res.headers['content-disposition'] ?? '');
   const star = cd.match(/filename\*=UTF-8''([^;]+)/i);
   const plain = cd.match(/filename="([^"]+)"/i);

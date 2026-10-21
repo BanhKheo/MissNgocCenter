@@ -2,9 +2,12 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { del, get, patch, post, put } from './client';
 import type {
   AnswerKeyGrid,
+  AssessmentCategory,
   AuditLogRow,
   ClassRow,
   ExamRow,
+  Gradebook,
+  GradebookTemplate,
   GradingRunProgress,
   Option,
   Paged,
@@ -41,6 +44,9 @@ export const qk = {
   permissions: ['permissions'] as const,
   auditLogs: (params?: object) => ['audit-logs', params ?? {}] as const,
   reportTemplate: ['report-template'] as const,
+  gradebook: (classId: string, params?: object) => ['classes', classId, 'gradebook', params ?? {}] as const,
+  categories: ['assessment-categories'] as const,
+  gradebookTemplate: ['gradebook-template'] as const,
 };
 
 // ───── Lớp, học sinh ─────
@@ -128,6 +134,19 @@ export const useAuditLogs = (params: { page: number; pageSize: number; keyword?:
 
 export const useReportTemplate = () =>
   useQuery({ queryKey: qk.reportTemplate, queryFn: () => get<ReportTemplateConfig>('/report-templates/default') });
+
+// ───── Sổ điểm ─────
+export const useGradebook = (classId: string, params: { from?: string; to?: string }) =>
+  useQuery({
+    queryKey: qk.gradebook(classId, params),
+    queryFn: () => get<Gradebook>(`/classes/${classId}/gradebook`, { params }),
+    placeholderData: keepPreviousData,
+  });
+
+export const useCategories = () => useQuery({ queryKey: qk.categories, queryFn: () => get<AssessmentCategory[]>('/assessment-categories') });
+
+export const useGradebookTemplate = () =>
+  useQuery({ queryKey: qk.gradebookTemplate, queryFn: () => get<GradebookTemplate>('/gradebook-template') });
 
 /** Mutation dùng chung: gọi API rồi làm mới các query liên quan */
 export function useApiMutation<TVars, TResult = unknown>(

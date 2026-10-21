@@ -1,16 +1,18 @@
-import { PlusOutlined } from '@ant-design/icons';
-import { Button, Card, Flex, Input, Progress, Segmented, Select, Table, Tag } from 'antd';
-import dayjs from 'dayjs';
+import { Card, Flex, Input, Progress, Segmented, Select, Table, Tag } from 'antd';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PMS, RoutePaths } from '@missngoc/core';
 import { useClassOptions, useExams } from '../../api/queries';
 import type { ExamRow } from '../../api/types';
+import { AddButton } from '../../components/buttons';
+import { PageHeader } from '../../components/PageHeader';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCan } from '../../store';
+import { formatDate } from '../../utils/format';
 import { ExamFormModal } from './ExamFormModal';
 
 export function keyStatus(e: ExamRow) {
+  if (e.gradingMode === 'MANUAL') return <Tag color="purple">Nhập điểm tay</Tag>;
   if (e.answerKeys.length === 0) return <Tag color="red">Chưa có đáp án</Tag>;
   if (e.answerKeys.some((k) => !k.complete)) return <Tag color="orange">Đáp án thiếu câu</Tag>;
   return <Tag color="green">{e.answerKeys.length > 1 ? `${e.answerKeys.length} mã đề` : 'Có đáp án'}</Tag>;
@@ -30,14 +32,7 @@ export function ExamListPage() {
 
   return (
     <div>
-      <Flex justify="space-between" align="center" wrap gap={8} style={{ marginBottom: 16 }}>
-        <h1 className="page-title">Bài kiểm tra</h1>
-        {canCreate && (
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setFormOpen(true)}>
-            Tạo bài kiểm tra
-          </Button>
-        )}
-      </Flex>
+      <PageHeader title="Bài kiểm tra" actions={<AddButton isRender={canCreate} text="Tạo bài kiểm tra" onClick={() => setFormOpen(true)} />} />
       <Flex gap={8} wrap style={{ marginBottom: 12 }}>
         <Select
           allowClear
@@ -67,7 +62,7 @@ export function ExamListPage() {
           pagination={{ current: page, pageSize: 20, total: exams.data?.total, onChange: setPage, hideOnSinglePage: true }}
           scroll={{ x: true }}
           columns={[
-            { title: 'Ngày', dataIndex: 'examDate', width: 100, render: (v: string) => dayjs(v).format('DD/MM/YYYY') },
+            { title: 'Ngày', dataIndex: 'examDate', width: 100, render: (v: string) => formatDate(v) },
             {
               title: 'Bài kiểm tra',
               dataIndex: 'title',

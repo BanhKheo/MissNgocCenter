@@ -2,6 +2,7 @@ import { Button, Card, Empty, Flex, Result, Space, Spin, Tag } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { RoutePaths } from '@missngoc/core';
 import { useExam, useSubmissions } from '../../api/queries';
+import { PageHeader } from '../../components/PageHeader';
 
 /** Danh sách bài cần duyệt của một bài kiểm tra */
 export function ReviewQueuePage() {
@@ -12,11 +13,8 @@ export function ReviewQueuePage() {
   const queue = (subs.data ?? []).filter((s) => s.status === 'NEEDS_REVIEW' && s.submissionId);
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
-      <Button type="link" style={{ padding: 0 }} onClick={() => navigate(RoutePaths.examDetail(id))}>
-        ← {exam.data?.title ?? 'Bài kiểm tra'}
-      </Button>
-      <h1 className="page-title">Bài cần duyệt</h1>
+    <div className="page-narrow">
+      <PageHeader back={{ label: exam.data?.title ?? 'Bài kiểm tra', to: RoutePaths.examDetail(id) }} title="Bài cần duyệt" />
       {subs.isLoading ? (
         <Spin />
       ) : queue.length === 0 ? (

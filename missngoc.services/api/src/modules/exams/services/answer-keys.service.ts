@@ -167,7 +167,7 @@ export class AnswerKeysService {
   /**
    * Lưu đáp án và chấm lại toàn bộ bài (không gọi AI).
    * Bài chỉ có mã đề chung thì xoá các mã đề khác; lưu mã đề riêng thì xoá mã đề chung.
-   * Đổi loại câu (trắc nghiệm ↔ điền từ) thì AI phải đọc lại: bài đã chấm chuyển về "Đã có ảnh" để bấm Generate.
+   * Đổi loại câu (trắc nghiệm ↔ điền từ) thì AI phải đọc lại: bài đã chấm chuyển về "Đã có ảnh" để bấm "Chấm bài mới".
    */
   private async save(tx: Tx, actor: AuthUser, examId: string, keys: KeyInput[]): Promise<{ rescored: number; needRegrade: number }> {
     const before = await tx.answerKey.findMany({ where: { examId }, include: { items: true } });

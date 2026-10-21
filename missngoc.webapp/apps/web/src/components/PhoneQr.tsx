@@ -57,7 +57,7 @@ export function PhoneQr() {
               options={candidates.map((c) => ({ value: c, label: c }))}
             />
           )}
-          <p className="muted" style={{ margin: '6px 0 0', fontSize: 13 }}>
+          <p className="hint">
             Điện thoại dùng cùng Wi-Fi với máy này, mở camera và quét mã.
           </p>
         </>

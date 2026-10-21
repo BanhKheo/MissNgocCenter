@@ -1,10 +1,12 @@
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { App, Button, Card, Checkbox, Flex, Form, Input, Modal, Popconfirm, Space, Table, Tag } from 'antd';
+import { DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { App, Button, Card, Checkbox, Form, Input, Modal, Space, Table, Tag } from 'antd';
 import { useEffect, useState } from 'react';
 import { APP_PERMISSIONS } from '@missngoc/core';
 import { del, errorMessage, post, put } from '../../api/client';
 import { usePermissions, useRole, useRoles, useApiMutation } from '../../api/queries';
 import type { PermissionGroup, RoleRow } from '../../api/types';
+import { AddButton, EditButton, RowAction } from '../../components/buttons';
+import { PageHeader } from '../../components/PageHeader';
 
 const PERM_LABEL = Object.fromEntries(APP_PERMISSIONS.map((p) => [p.code, p.displayName]));
 
@@ -89,15 +91,11 @@ export function RolesPage() {
 
   return (
     <div>
-      <Flex justify="space-between" align="center" wrap gap={8} style={{ marginBottom: 16 }}>
-        <h1 className="page-title">Vai trò và quyền</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-          Tạo vai trò
-        </Button>
-      </Flex>
-      <p className="muted">
-        Mỗi tài khoản có 1 vai trò. Một người cần quyền của 2 vai trò thì tạo vai trò mới gộp các quyền đó. Vai trò ADMIN luôn có mọi quyền.
-      </p>
+      <PageHeader
+        title="Vai trò và quyền"
+        subtitle="Mỗi tài khoản có 1 vai trò. Một người cần quyền của 2 vai trò thì tạo vai trò mới gộp các quyền đó. Vai trò ADMIN luôn có mọi quyền."
+        actions={<AddButton text="Tạo vai trò" onClick={() => setCreateOpen(true)} />}
+      />
       <Card styles={{ body: { padding: 0 } }}>
         <Table<RoleRow>
           rowKey="id"
@@ -114,15 +112,22 @@ export function RolesPage() {
               key: 'actions',
               width: 150,
               render: (_, r) => (
-                <Space>
-                  <Button size="small" onClick={() => setEditId(r.id)}>
-                    {r.name === 'ADMIN' ? 'Xem' : 'Sửa quyền'}
-                  </Button>
-                  {!r.isSystem && (
-                    <Popconfirm title={`Xoá vai trò ${r.name}?`} okText="Xoá" cancelText="Huỷ" onConfirm={() => remove(r)}>
-                      <Button size="small" danger icon={<DeleteOutlined />} />
-                    </Popconfirm>
+                <Space size={4}>
+                  {r.name === 'ADMIN' ? (
+                    <Button size="small" icon={<EyeOutlined />} onClick={() => setEditId(r.id)}>
+                      Xem
+                    </Button>
+                  ) : (
+                    <EditButton size="small" text="Sửa quyền" onClick={() => setEditId(r.id)} />
                   )}
+                  <RowAction
+                    isRender={!r.isSystem}
+                    icon={<DeleteOutlined />}
+                    label="Xoá vai trò"
+                    danger
+                    confirm={{ title: `Xoá vai trò ${r.name}?`, okText: 'Xoá' }}
+                    onClick={() => remove(r)}
+                  />
                 </Space>
               ),
             },

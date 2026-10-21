@@ -111,7 +111,7 @@ export function ImportModal<E = unknown>({ open, onClose, type, specParams, uplo
     <Modal
       open={open}
       onCancel={close}
-      title={`Import Excel: ${d?.title ?? ''}`}
+      title={`Nhập từ Excel: ${d?.title ?? ''}`}
       width={900}
       destroyOnHidden
       footer={
@@ -208,7 +208,7 @@ export function ImportModal<E = unknown>({ open, onClose, type, specParams, uplo
             dataSource={invalidFirst}
             pagination={{ pageSize: 50, hideOnSinglePage: true }}
             scroll={{ x: true }}
-            onRow={(r) => ({ style: r.errors.length ? { background: '#fff1f0' } : undefined })}
+            rowClassName={(r) => (r.errors.length ? 'row-error' : '')}
             columns={[
               { title: 'Dòng', dataIndex: 'rowNumber', width: 60 },
               ...preview.headers.map((h) => ({
@@ -234,7 +234,7 @@ export function ImportModal<E = unknown>({ open, onClose, type, specParams, uplo
       <Modal
         open={promptOpen}
         onCancel={() => setPromptOpen(false)}
-        title="Prompt cho chatbot"
+        title="Lời nhắn cho chatbot"
         width={720}
         footer={
           <Space>

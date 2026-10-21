@@ -21,7 +21,7 @@ export class AccessService {
 
   classWhere(user: AuthUser): Prisma.ClassWhereInput {
     if (this.canSeeAllClasses(user)) return {};
-    if (hasAnyPermission(user.permissions, [PMS.RPT_USER])) return { teacherId: user.id };
+    if (hasAnyPermission(user.permissions, [PMS.RPT_USER, PMS.ATT_USER])) return { teacherId: user.id };
     return { id: NONE };
   }
 

@@ -1,10 +1,12 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { App, Button, Card, Checkbox, ColorPicker, Flex, Form, Input, InputNumber, Space, Switch, Table, Tag } from 'antd';
-import type { Color } from 'antd/es/color-picker';
+import { App, Button, Card, Checkbox, Flex, Form, Input, InputNumber, Space, Switch, Table, Tag } from 'antd';
 import { useEffect, useState } from 'react';
 import { errorMessage, put } from '../../api/client';
 import { qk, useApiMutation, useReportTemplate } from '../../api/queries';
 import type { ReportTemplateConfig } from '../../api/types';
+import { RowAction, SaveButton } from '../../components/buttons';
+import { ColorSwatch } from '../../components/ColorSwatch';
+import { PageHeader } from '../../components/PageHeader';
 
 const COLUMN_OPTIONS = [
   { value: 'stt', label: 'STT' },
@@ -17,10 +19,8 @@ const COLUMN_OPTIONS = [
   { value: 'note', label: 'Ghi chú' },
 ];
 
-const hex = (c: Color | string) => (typeof c === 'string' ? c : c.toHexString()).toUpperCase().slice(0, 7);
-
 function Swatch({ value, onChange }: { value?: string; onChange?: (v: string) => void }) {
-  return <ColorPicker value={value} onChange={(c) => onChange?.(hex(c))} showText disabledAlpha />;
+  return <ColorSwatch value={value} onChange={(v) => v && onChange?.(v)} />;
 }
 
 /** Mẫu bảng điểm (UC-11): màu tiêu đề, dải điểm theo màu, cột hiển thị */
@@ -56,12 +56,7 @@ export function ReportTemplatePage() {
 
   return (
     <div style={{ maxWidth: 820 }}>
-      <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
-        <h1 className="page-title">Mẫu bảng điểm</h1>
-        <Button type="primary" loading={saving} onClick={save}>
-          Lưu
-        </Button>
-      </Flex>
+      <PageHeader title="Mẫu bảng điểm" actions={<SaveButton loading={saving} onClick={save} />} />
       <Space orientation="vertical" style={{ width: '100%' }} size={12}>
         <Card size="small" title="Tiêu đề và cột">
           <Form layout="vertical">
@@ -119,10 +114,15 @@ export function ReportTemplatePage() {
               {
                 title: '',
                 key: 'del',
-                render: (_, __, i) =>
-                  config.scoreBands.length > 1 && (
-                    <Button size="small" type="text" danger icon={<DeleteOutlined />} onClick={() => set({ scoreBands: config.scoreBands.filter((_, j) => j !== i) })} />
-                  ),
+                render: (_, __, i) => (
+                  <RowAction
+                    isRender={config.scoreBands.length > 1}
+                    icon={<DeleteOutlined />}
+                    label="Xoá dải điểm"
+                    danger
+                    onClick={() => set({ scoreBands: config.scoreBands.filter((_, j) => j !== i) })}
+                  />
+                ),
               },
             ]}
           />

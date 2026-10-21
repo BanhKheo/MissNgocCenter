@@ -5,6 +5,7 @@ export enum PMS {
   SYS_AD = 'SYS.AD',
   USER_AD = 'USER.AD',
   CLS_AD = 'CLS.AD',
+  ATT_USER = 'ATT.USER',
   EXAM_AD = 'EXAM.AD',
   GRD_USER = 'GRD.USER',
   RPT_AD = 'RPT.AD',
@@ -29,11 +30,12 @@ export interface AppPermission {
 }
 
 export const APP_PERMISSIONS: AppPermission[] = [
-  { code: PMS.SYS_AD, displayName: 'Mẫu bảng điểm, nhật ký thao tác', groupId: PMS_GROUP.SYSTEM },
+  { code: PMS.SYS_AD, displayName: 'Mẫu bảng điểm, sổ điểm, hệ số loại bài, nhật ký thao tác', groupId: PMS_GROUP.SYSTEM },
   { code: PMS.USER_AD, displayName: 'Tài khoản, vai trò, ma trận quyền', groupId: PMS_GROUP.USER },
-  { code: PMS.CLS_AD, displayName: 'Lớp, học sinh, import Excel', groupId: PMS_GROUP.CLASS },
+  { code: PMS.CLS_AD, displayName: 'Lớp, học sinh, nhập học sinh từ Excel', groupId: PMS_GROUP.CLASS },
+  { code: PMS.ATT_USER, displayName: 'Điểm danh, bài tập về nhà, nhập điểm tay (lớp mình dạy)', groupId: PMS_GROUP.CLASS },
   { code: PMS.EXAM_AD, displayName: 'Bài kiểm tra, đáp án, chấm lại', groupId: PMS_GROUP.EXAM },
-  { code: PMS.GRD_USER, displayName: 'Chụp và tải ảnh, Generate, duyệt kết quả', groupId: PMS_GROUP.GRADING },
+  { code: PMS.GRD_USER, displayName: 'Chụp và tải ảnh, chấm bài, duyệt kết quả', groupId: PMS_GROUP.GRADING },
   { code: PMS.RPT_AD, displayName: 'Xem, xuất Excel và thống kê mọi lớp', groupId: PMS_GROUP.REPORT },
   { code: PMS.RPT_USER, displayName: 'Xem bảng điểm và thống kê lớp mình dạy', groupId: PMS_GROUP.REPORT },
 ];
@@ -46,8 +48,8 @@ export const ROLE_NAME = {
 
 // Quyền mặc định khi cài lần đầu. ADMIN luôn có mọi quyền; các vai trò khác Admin sửa được trên web.
 export const DEFAULT_ROLE_PERMISSIONS: Record<string, PMS[]> = {
-  [ROLE_NAME.Staff]: [PMS.CLS_AD, PMS.GRD_USER, PMS.RPT_AD],
-  [ROLE_NAME.Teacher]: [PMS.RPT_USER],
+  [ROLE_NAME.Staff]: [PMS.CLS_AD, PMS.ATT_USER, PMS.GRD_USER, PMS.RPT_AD],
+  [ROLE_NAME.Teacher]: [PMS.ATT_USER, PMS.RPT_USER],
 };
 
 export const ROLE_DESCRIPTIONS: Record<string, string> = {

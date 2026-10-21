@@ -15,9 +15,10 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { MAX_TEXT_ANSWER, OPTION_SETS, QUESTION_KINDS, type QuestionKind } from '@missngoc/core';
+import { GRADING_MODES, MAX_TEXT_ANSWER, OPTION_SETS, QUESTION_KINDS, type GradingMode, type QuestionKind } from '@missngoc/core';
 import { PageQueryDto } from '../../../common/pagination';
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : value);
@@ -38,14 +39,36 @@ export class ExamCreateRequestDto {
   @IsDateString()
   examDate: string;
 
-  @ApiProperty({ example: 40 })
+  @ApiPropertyOptional({ enum: GRADING_MODES, example: 'AI', description: 'Không gửi thì là AI' })
+  @IsOptional()
+  @IsIn(GRADING_MODES)
+  gradingMode?: GradingMode;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Loại bài (hệ số mặc định)' })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsUUID()
+  categoryId?: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 2, description: 'Hệ số riêng; không gửi thì lấy hệ số của loại bài' })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(100)
+  weight?: number | null;
+
+  @ApiPropertyOptional({ example: 40, description: 'Bắt buộc khi chấm bằng AI' })
+  @ValidateIf((o: ExamCreateRequestDto) => o.gradingMode !== 'MANUAL')
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(200)
   questionCount: number;
 
-  @ApiProperty({ enum: OPTION_SETS, example: 'ABCD' })
+  @ApiPropertyOptional({ enum: OPTION_SETS, example: 'ABCD', description: 'Bắt buộc khi chấm bằng AI' })
+  @ValidateIf((o: ExamCreateRequestDto) => o.gradingMode !== 'MANUAL')
   @IsIn(OPTION_SETS)
   options: string;
 
@@ -78,6 +101,21 @@ export class ExamUpdateRequestDto {
   @IsOptional()
   @IsDateString()
   examDate?: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsUUID()
+  categoryId?: string | null;
+
+  @ApiPropertyOptional({ nullable: true, description: 'null: dùng hệ số của loại bài' })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(100)
+  weight?: number | null;
 
   @ApiPropertyOptional()
   @IsOptional()

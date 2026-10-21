@@ -39,7 +39,7 @@ export class GradingRunsService {
     });
     if (subs.length === 0) {
       throw new BadRequestException(
-        regrade ? 'Chưa có bài nào có ảnh' : 'Không có bài mới cần chấm. Chọn "Chấm lại" nếu muốn chấm lại tất cả',
+        regrade ? 'Chưa có bài nào có ảnh' : 'Không có bài mới cần chấm. Bấm "Chấm lại tất cả" nếu muốn chấm lại',
       );
     }
 

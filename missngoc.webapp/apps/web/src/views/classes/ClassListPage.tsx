@@ -1,10 +1,11 @@
-import { PlusOutlined } from '@ant-design/icons';
-import { Button, Card, Flex, Input, Segmented, Table, Tag } from 'antd';
+import { Card, Flex, Input, Segmented, Table, Tag } from 'antd';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PMS, RoutePaths } from '@missngoc/core';
 import { useClasses } from '../../api/queries';
 import type { ClassRow } from '../../api/types';
+import { AddButton } from '../../components/buttons';
+import { PageHeader } from '../../components/PageHeader';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCan } from '../../store';
 import { ClassFormModal } from './ClassFormModal';
@@ -21,14 +22,7 @@ export function ClassListPage() {
 
   return (
     <div>
-      <Flex justify="space-between" align="center" wrap gap={8} style={{ marginBottom: 16 }}>
-        <h1 className="page-title">Lớp học</h1>
-        {canEdit && (
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setFormOpen(true)}>
-            Tạo lớp
-          </Button>
-        )}
-      </Flex>
+      <PageHeader title="Lớp học" actions={<AddButton isRender={canEdit} text="Tạo lớp" onClick={() => setFormOpen(true)} />} />
       <Flex gap={8} wrap style={{ marginBottom: 12 }}>
         <Input.Search
           allowClear

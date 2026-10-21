@@ -9,6 +9,7 @@ import { StorageService } from '../../../common/storage/storage.service';
 import { compareVietnameseNames } from '../../../common/text';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AuditService } from '../../audit/audit.service';
+import { resolveVersion } from '../../grading/services/scoring.service';
 
 const BUSY: SubmissionStatus[] = ['QUEUED', 'PROCESSING'];
 
@@ -96,7 +97,7 @@ export class SubmissionsService {
         exam: {
           include: {
             class: true,
-            answerKeys: { select: { versionCode: true, items: { select: { questionNo: true, kind: true } } } },
+            answerKeys: { select: { versionCode: true, items: { select: { questionNo: true, kind: true, correct: true } } } },
           },
         },
       },
@@ -104,6 +105,10 @@ export class SubmissionsService {
     if (!sub) throw new NotFoundException('Không tìm thấy bài nộp');
     await this.access.assertExam(user, sub.examId);
     const kindOf = new Map(sub.exam.answerKeys.flatMap((k) => k.items.map((i) => [i.questionNo, i.kind] as const)));
+    // Đáp án đúng theo mã đề của bài, để người duyệt so với chữ học sinh viết. Chưa biết mã đề thì không có.
+    const version = resolveVersion(sub.versionCode, sub.exam.answerKeys);
+    const key = sub.exam.answerKeys.find((k) => k.versionCode === version);
+    const correctOf = new Map((key?.items ?? []).map((i) => [i.questionNo, i.correct]));
     return {
       id: sub.id,
       status: sub.status,
@@ -130,6 +135,7 @@ export class SubmissionsService {
         status: a.status,
         finalChoice: a.finalChoice,
         isCorrect: a.isCorrect,
+        correct: correctOf.get(a.questionNo) ?? null,
         reviewed: a.reviewedAt !== null,
         needsReview: UNCERTAIN_STATUSES.includes(a.status as MarkStatus) && a.reviewedAt === null,
       })),

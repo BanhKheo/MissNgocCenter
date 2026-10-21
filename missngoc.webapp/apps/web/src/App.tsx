@@ -7,6 +7,7 @@ import { useIsMobile } from './hooks/useIsMobile';
 import { AppLayout } from './layouts/AppLayout';
 import { useCan } from './store';
 import { AuditLogsPage } from './views/admin/AuditLogsPage';
+import { GradebookSettingsPage } from './views/admin/GradebookSettingsPage';
 import { ReportTemplatePage } from './views/admin/ReportTemplatePage';
 import { RolesPage } from './views/admin/RolesPage';
 import { UsersPage } from './views/admin/UsersPage';
@@ -17,12 +18,13 @@ import { ClassDetailPage } from './views/classes/ClassDetailPage';
 import { ClassListPage } from './views/classes/ClassListPage';
 import { ExamDetailPage } from './views/exams/ExamDetailPage';
 import { ExamListPage } from './views/exams/ExamListPage';
+import { GradebookPage } from './views/gradebook/GradebookPage';
 import { ReportPage } from './views/report/ReportPage';
 import { ReviewQueuePage } from './views/review/ReviewQueuePage';
 import { SubmissionReviewPage } from './views/review/SubmissionReviewPage';
 
-const VIEW_EXAMS = [PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER, PMS.CLS_AD];
-const VIEW_CLASSES = [PMS.CLS_AD, PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER];
+const VIEW_EXAMS = [PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER, PMS.CLS_AD, PMS.ATT_USER];
+const VIEW_CLASSES = [PMS.CLS_AD, PMS.ATT_USER, PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER];
 
 /** Màn hình đầu: giáo vụ trên điện thoại vào thẳng Chụp bài (FR-CAP-01) */
 function Home() {
@@ -53,6 +55,7 @@ export function App() {
           <Route path="capture" element={<RequirePermission any={[PMS.GRD_USER]}><CapturePage /></RequirePermission>} />
           <Route path="classes" element={<RequirePermission any={VIEW_CLASSES}><ClassListPage /></RequirePermission>} />
           <Route path="classes/:id" element={<RequirePermission any={VIEW_CLASSES}><ClassDetailPage /></RequirePermission>} />
+          <Route path="classes/:id/gradebook" element={<RequirePermission any={VIEW_CLASSES}><GradebookPage /></RequirePermission>} />
           <Route path="exams" element={<RequirePermission any={VIEW_EXAMS}><ExamListPage /></RequirePermission>} />
           <Route path="exams/:id" element={<RequirePermission any={VIEW_EXAMS}><ExamDetailPage /></RequirePermission>} />
           <Route path="exams/:id/review" element={<RequirePermission any={[PMS.GRD_USER]}><ReviewQueuePage /></RequirePermission>} />
@@ -65,6 +68,7 @@ export function App() {
           <Route path="admin/roles" element={<RequirePermission any={[PMS.USER_AD]}><RolesPage /></RequirePermission>} />
           <Route path="admin/audit-logs" element={<RequirePermission any={[PMS.SYS_AD]}><AuditLogsPage /></RequirePermission>} />
           <Route path="admin/report-template" element={<RequirePermission any={[PMS.SYS_AD]}><ReportTemplatePage /></RequirePermission>} />
+          <Route path="admin/gradebook" element={<RequirePermission any={[PMS.SYS_AD]}><GradebookSettingsPage /></RequirePermission>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

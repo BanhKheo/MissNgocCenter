@@ -31,7 +31,7 @@ export function AuthImage({ imageId, height, preview = true }: { imageId: string
     <Image
       src={url}
       height={height}
-      style={{ objectFit: 'contain', maxWidth: '100%', background: '#fafafa' }}
+      className="auth-image"
       preview={preview}
     />
   );

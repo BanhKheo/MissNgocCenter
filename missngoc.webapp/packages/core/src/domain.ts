@@ -56,5 +56,14 @@ export const DEFAULT_VERSION_URL_PARAM = '_';
 export const OPTION_SETS = ['ABCD', 'ABCDE'] as const;
 export type OptionSet = (typeof OPTION_SETS)[number];
 
+/** AI: chụp ảnh, AI đọc theo đáp án. MANUAL: giáo viên nhập điểm (bài nói, viết, kiểm tra nhỏ) */
+export const GRADING_MODES = ['AI', 'MANUAL'] as const;
+export type GradingMode = (typeof GRADING_MODES)[number];
+
+export const GRADING_MODE_LABEL: Record<GradingMode, string> = {
+  AI: 'Chụp ảnh, AI chấm',
+  MANUAL: 'Nhập điểm tay',
+};
+
 export const IMPORT_TYPES = ['students', 'answer-keys'] as const;
 export type ImportType = (typeof IMPORT_TYPES)[number];

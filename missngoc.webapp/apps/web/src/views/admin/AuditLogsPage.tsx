@@ -1,8 +1,9 @@
-import { Card, Input, Table, Typography } from 'antd';
-import dayjs from 'dayjs';
+import { Card, Input, Table } from 'antd';
 import { useState } from 'react';
 import { useAuditLogs } from '../../api/queries';
 import type { AuditLogRow } from '../../api/types';
+import { PageHeader } from '../../components/PageHeader';
+import { formatDateTime } from '../../utils/format';
 
 const ACTION_LABEL: Record<string, string> = {
   'user.create': 'Tạo tài khoản',
@@ -16,14 +17,14 @@ const ACTION_LABEL: Record<string, string> = {
   'class.update': 'Sửa lớp',
   'student.create': 'Thêm học sinh',
   'student.update': 'Sửa học sinh',
-  'student.import': 'Import học sinh',
+  'student.import': 'Nhập học sinh từ Excel',
   'student.transfer': 'Chuyển lớp',
   'student.leave-class': 'Rời lớp',
   'exam.create': 'Tạo bài kiểm tra',
   'exam.update': 'Sửa bài kiểm tra',
   'answer-key.save': 'Lưu đáp án',
   'answer-key.delete': 'Xoá đáp án',
-  'grading.run': 'Generate',
+  'grading.run': 'Chấm bài',
   'submission.answer.update': 'Sửa câu khi duyệt',
   'submission.confirm': 'Duyệt xong',
   'submission.version-code': 'Sửa mã đề',
@@ -40,9 +41,7 @@ export function AuditLogsPage() {
 
   return (
     <div>
-      <h1 className="page-title" style={{ marginBottom: 16 }}>
-        Nhật ký thao tác
-      </h1>
+      <PageHeader title="Nhật ký thao tác" />
       <Input.Search allowClear placeholder="Lọc theo thao tác, ví dụ answer-key" style={{ maxWidth: 320, marginBottom: 12 }} onSearch={(v) => { setKeyword(v); setPage(1); }} />
       <Card styles={{ body: { padding: 0 } }}>
         <Table<AuditLogRow>
@@ -54,13 +53,11 @@ export function AuditLogsPage() {
           scroll={{ x: true }}
           expandable={{
             expandedRowRender: (r) => (
-              <Typography.Paragraph style={{ margin: 0 }}>
-                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: 12 }}>{JSON.stringify({ trước: r.before, sau: r.after }, null, 2)}</pre>
-              </Typography.Paragraph>
+              <pre className="json-pre">{JSON.stringify({ trước: r.before, sau: r.after }, null, 2)}</pre>
             ),
           }}
           columns={[
-            { title: 'Lúc', dataIndex: 'at', width: 150, render: (v: string) => dayjs(v).format('DD/MM/YYYY HH:mm:ss') },
+            { title: 'Lúc', dataIndex: 'at', width: 160, render: (v: string) => formatDateTime(v, true) },
             { title: 'Người làm', key: 'actor', render: (_, r) => r.actor?.fullName ?? '—' },
             { title: 'Thao tác', dataIndex: 'action', render: (v: string) => ACTION_LABEL[v] ?? v },
             { title: 'Đối tượng', key: 'entity', render: (_, r) => `${r.entity}${r.entityId ? ` · ${r.entityId.slice(0, 8)}` : ''}` },

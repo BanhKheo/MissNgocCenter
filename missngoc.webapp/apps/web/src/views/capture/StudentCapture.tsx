@@ -1,10 +1,11 @@
 import { ArrowLeftOutlined, CameraOutlined, DeleteOutlined, PictureOutlined, SwapOutlined } from '@ant-design/icons';
-import { Alert, App, Button, Flex, Modal, Popconfirm, Progress, Select, Space, Spin } from 'antd';
+import { Alert, App, Button, Flex, Modal, Progress, Select, Space, Spin } from 'antd';
 import { useRef, useState, type ChangeEvent } from 'react';
 import { del, errorMessage, isNetworkError, post, put, upload } from '../../api/client';
 import { useSubmission } from '../../api/queries';
 import type { ExamRow, SubmissionRow } from '../../api/types';
 import { AuthImage } from '../../components/AuthImage';
+import { RowAction } from '../../components/buttons';
 import { StatusTag } from '../../components/StatusTag';
 import { prepareImage, type PreparedImage } from '../../utils/image';
 
@@ -152,7 +153,7 @@ export function StudentCapture({ exam, row, rows, pending, lastSaved, onBack, on
 
       {prepared ? (
         <div>
-          <img src={prepared.previewUrl} alt="Xem trước" style={{ width: '100%', borderRadius: 8, border: '1px solid #ddd' }} />
+          <img src={prepared.previewUrl} alt="Xem trước" className="capture-preview" />
           {prepared.warnings.map((w) => (
             <Alert key={w} type="warning" showIcon title={w} style={{ marginTop: 8 }} />
           ))}
@@ -179,7 +180,7 @@ export function StudentCapture({ exam, row, rows, pending, lastSaved, onBack, on
               icon={<CameraOutlined />}
               onClick={openCamera}
               disabled={busy || row.status === 'ABSENT'}
-              style={{ height: 64, fontSize: 20 }}
+              className="capture-shoot"
             >
               {row.imageCount > 0 ? 'Chụp thêm trang' : 'Chụp bài'}
             </Button>
@@ -208,10 +209,15 @@ export function StudentCapture({ exam, row, rows, pending, lastSaved, onBack, on
                 <AuthImage imageId={img.id} height={160} />
                 <div>
                   <span className="muted">Trang {img.pageNo}</span>
-                  <Button size="small" type="text" icon={<SwapOutlined />} onClick={() => setMoveImageId(img.id)} disabled={busy} title="Chuyển sang học sinh khác" />
-                  <Popconfirm title="Xoá ảnh này?" okText="Xoá" cancelText="Không" onConfirm={() => removeImage(img.id)}>
-                    <Button size="small" type="text" danger icon={<DeleteOutlined />} disabled={busy} title="Xoá ảnh" />
-                  </Popconfirm>
+                  <RowAction icon={<SwapOutlined />} label="Chuyển sang học sinh khác" disabled={busy} onClick={() => setMoveImageId(img.id)} />
+                  <RowAction
+                    icon={<DeleteOutlined />}
+                    label="Xoá ảnh"
+                    danger
+                    disabled={busy}
+                    confirm={{ title: 'Xoá ảnh này?', okText: 'Xoá' }}
+                    onClick={() => removeImage(img.id)}
+                  />
                 </div>
               </div>
             ))}

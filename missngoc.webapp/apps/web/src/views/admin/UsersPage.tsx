@@ -1,12 +1,14 @@
-import { KeyOutlined, LockOutlined, PlusOutlined, UnlockOutlined } from '@ant-design/icons';
+import { KeyOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
 import { App, Button, Card, Flex, Form, Input, Modal, Select, Space, Table, Tag, Typography } from 'antd';
-import dayjs from 'dayjs';
 import { useState } from 'react';
 import { errorMessage, patch, post } from '../../api/client';
-import { qk, useApiMutation, useRoleOptions, useUsers } from '../../api/queries';
+import { useApiMutation, useRoleOptions, useUsers } from '../../api/queries';
 import type { UserRow } from '../../api/types';
+import { AddButton, EditButton } from '../../components/buttons';
+import { PageHeader } from '../../components/PageHeader';
 import { selectProfile, useAppSelector } from '../../store';
 import { copyText } from '../../utils/clipboard';
+import { formatDateTime } from '../../utils/format';
 
 /** Mật khẩu tạm dễ đọc: bỏ các ký tự dễ nhầm (0/O, 1/l/I) */
 function randomPassword(): string {
@@ -88,21 +90,20 @@ export function UsersPage() {
 
   return (
     <div>
-      <Flex justify="space-between" align="center" wrap gap={8} style={{ marginBottom: 16 }}>
-        <h1 className="page-title">Tài khoản</h1>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            form.setFieldsValue({ password: randomPassword() });
-            setCreateOpen(true);
-          }}
-        >
-          Cấp tài khoản
-        </Button>
-      </Flex>
-      <p className="muted">Không có trang đăng ký. Trung tâm cấp tài khoản cho giáo vụ và giáo viên. Nhân viên nghỉ việc thì khoá, không xoá.</p>
-      <Input.Search allowClear placeholder="Tìm username hoặc họ tên" style={{ maxWidth: 320, marginBottom: 12 }} onSearch={(v) => { setKeyword(v); setPage(1); }} />
+      <PageHeader
+        title="Tài khoản"
+        subtitle="Không có trang đăng ký. Trung tâm cấp tài khoản cho giáo vụ và giáo viên. Nhân viên nghỉ việc thì khoá, không xoá."
+        actions={
+          <AddButton
+            text="Cấp tài khoản"
+            onClick={() => {
+              form.setFieldsValue({ password: randomPassword() });
+              setCreateOpen(true);
+            }}
+          />
+        }
+      />
+      <Input.Search allowClear placeholder="Tìm tên đăng nhập hoặc họ tên" style={{ maxWidth: 320, marginBottom: 12 }} onSearch={(v) => { setKeyword(v); setPage(1); }} />
       <Card styles={{ body: { padding: 0 } }}>
         <Table<UserRow>
           rowKey="id"
@@ -111,7 +112,7 @@ export function UsersPage() {
           pagination={{ current: page, pageSize: 20, total: users.data?.total, onChange: setPage, hideOnSinglePage: true }}
           scroll={{ x: true }}
           columns={[
-            { title: 'Username', dataIndex: 'username', render: (v: string, u) => (<><b>{v}</b>{u.id === me?.id && <Tag style={{ marginLeft: 6 }}>Bạn</Tag>}</>) },
+            { title: 'Tên đăng nhập', dataIndex: 'username', render: (v: string, u) => (<><b>{v}</b>{u.id === me?.id && <Tag style={{ marginLeft: 6 }}>Bạn</Tag>}</>) },
             { title: 'Họ tên', dataIndex: 'fullName' },
             { title: 'Vai trò', key: 'role', render: (_, u) => <Tag color={u.role.name === 'ADMIN' ? 'blue' : undefined}>{u.role.name}</Tag> },
             {
@@ -120,15 +121,13 @@ export function UsersPage() {
               render: (_, u) =>
                 u.status === 'BANNED' ? <Tag color="red">Đã khoá</Tag> : u.mustChangePassword ? <Tag color="orange">Chưa đổi mật khẩu tạm</Tag> : <Tag color="green">Hoạt động</Tag>,
             },
-            { title: 'Đăng nhập gần nhất', dataIndex: 'lastLoginAt', render: (v: string | null) => (v ? dayjs(v).format('DD/MM/YYYY HH:mm') : '—') },
+            { title: 'Đăng nhập gần nhất', dataIndex: 'lastLoginAt', render: (v: string | null) => formatDateTime(v) || '—' },
             {
               title: '',
               key: 'actions',
               render: (_, u) => (
                 <Space size={4} wrap>
-                  <Button size="small" onClick={() => setEditing(u)}>
-                    Sửa
-                  </Button>
+                  <EditButton size="small" onClick={() => setEditing(u)} />
                   <Button size="small" icon={<KeyOutlined />} onClick={() => { resetForm.setFieldsValue({ password: randomPassword() }); setResetFor(u); }}>
                     Đặt lại mật khẩu
                   </Button>
@@ -153,9 +152,9 @@ export function UsersPage() {
         <Form form={form} layout="vertical" requiredMark="optional" preserve={false}>
           <Form.Item
             name="username"
-            label="Username"
+            label="Tên đăng nhập"
             extra="Chữ thường, số, dấu chấm; 3–30 ký tự. Không cần email"
-            rules={[{ required: true, message: 'Nhập username' }, { pattern: /^[a-z0-9.]{3,30}$/, message: 'Chỉ chữ thường, số, dấu chấm; 3–30 ký tự' }]}
+            rules={[{ required: true, message: 'Nhập tên đăng nhập' }, { pattern: /^[a-z0-9.]{3,30}$/, message: 'Chỉ chữ thường, số, dấu chấm; 3–30 ký tự' }]}
             normalize={(v: string) => v?.toLowerCase().replace(/\s/g, '')}
           >
             <Input placeholder="giaovu.lan" autoCapitalize="none" />

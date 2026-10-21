@@ -8,6 +8,7 @@ import { errorMessage, isNetworkError, upload } from '../../api/client';
 import { qk, useClassOptions, useExam, useExams, useSubmissions } from '../../api/queries';
 import type { SubmissionRow } from '../../api/types';
 import { StatusTag } from '../../components/StatusTag';
+import { formatDate } from '../../utils/format';
 import { StudentCapture } from './StudentCapture';
 
 interface PendingUpload {
@@ -42,7 +43,12 @@ export function CapturePage() {
   const classes = useClassOptions();
   const [classId, setClassId] = useState<string | undefined>(() => remember('capture.classId'));
   const [examId, setExamId] = useState<string | undefined>(() => params.get('examId') ?? undefined);
-  const exams = useExams({ page: 1, pageSize: 50, classId, status: 'OPEN' }, !!classId);
+  const examsQuery = useExams({ page: 1, pageSize: 50, classId, status: 'OPEN' }, !!classId);
+  // Bài nhập điểm tay không chụp ảnh
+  const exams = useMemo(
+    () => ({ ...examsQuery, data: examsQuery.data && { ...examsQuery.data, items: examsQuery.data.items.filter((e) => e.gradingMode === 'AI') } }),
+    [examsQuery],
+  );
   const subs = useSubmissions(examId, 15_000);
 
   const [currentId, setCurrentId] = useState<string | null>(null);
@@ -206,7 +212,7 @@ export function CapturePage() {
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
+    <div className="page-narrow">
       {pendingBanner}
       <Space orientation="vertical" style={{ width: '100%' }} size={8}>
         <Select
@@ -232,7 +238,7 @@ export function CapturePage() {
           notFoundContent="Lớp chưa có bài kiểm tra"
           options={(exams.data?.items ?? []).map((e) => ({
             value: e.id,
-            label: `${e.title} · ${new Date(e.examDate).toLocaleDateString('vi-VN')}`,
+            label: `${e.title} · ${formatDate(e.examDate)}`,
           }))}
         />
       </Space>
@@ -243,9 +249,9 @@ export function CapturePage() {
         <>
           <div style={{ margin: '16px 0 8px' }}>
             <Flex justify="space-between" align="baseline">
-              <b style={{ fontSize: 16 }}>
+              <span className="capture-progress-label">
                 {done}/{present.length} đã có ảnh
-              </b>
+              </span>
               <Button type="link" onClick={() => navigate(RoutePaths.examDetail(examId))} style={{ padding: 0 }}>
                 Mở trang chấm
               </Button>
@@ -257,7 +263,7 @@ export function CapturePage() {
             <Result
               status="success"
               title="Đã chụp đủ cả lớp"
-              subTitle="Mở trang chấm và bấm Generate để chấm bài."
+              subTitle="Mở trang bài kiểm tra và bấm Chấm bài mới."
               extra={
                 <Button type="primary" size="large" onClick={() => navigate(RoutePaths.examDetail(examId))}>
                   Mở trang chấm
@@ -285,13 +291,13 @@ export function CapturePage() {
               {filtered.map((r) => (
                 <div key={r.studentId} className="capture-student" onClick={() => setCurrentId(r.studentId)}>
                   {hasImage(r) ? (
-                    <CheckCircleFilled style={{ color: '#52c41a', fontSize: 22 }} />
+                    <CheckCircleFilled className="capture-student-icon done" />
                   ) : (
-                    <CameraOutlined style={{ color: '#9ca3af', fontSize: 22 }} />
+                    <CameraOutlined className="capture-student-icon" />
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 17, fontWeight: 600 }}>{r.fullName}</div>
-                    <div className="muted" style={{ fontSize: 13 }}>
+                    <div className="capture-student-name">{r.fullName}</div>
+                    <div className="muted capture-student-sub">
                       {r.studentCode}
                       {r.imageCount > 1 ? ` · ${r.imageCount} trang` : ''}
                     </div>

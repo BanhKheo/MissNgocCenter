@@ -1,4 +1,4 @@
-import type { MarkStatus, QuestionKind, SubmissionStatus } from '@missngoc/core';
+import type { GradingMode, MarkStatus, QuestionKind, SubmissionStatus } from '@missngoc/core';
 import type { AuthProfile } from '../store/appSlice';
 
 export interface Paged<T> {
@@ -87,6 +87,12 @@ export interface ExamRow {
   id: string;
   title: string;
   examDate: string;
+  gradingMode: GradingMode;
+  category: { id: string; name: string; weight: number } | null;
+  /** Hệ số riêng của bài; null thì theo loại bài */
+  weight: number | null;
+  /** Hệ số dùng khi tính điểm trung bình */
+  effectiveWeight: number;
   questionCount: number;
   options: string;
   maxScore: number;
@@ -144,6 +150,8 @@ export interface SubmissionDetail {
     status: MarkStatus;
     finalChoice: string | null;
     isCorrect: boolean | null;
+    /** Đáp án đúng theo mã đề của bài; null khi chưa biết mã đề */
+    correct: string[] | null;
     reviewed: boolean;
     needsReview: boolean;
   }[];
@@ -256,4 +264,88 @@ export interface AuditLogRow {
   after: unknown;
   at: string;
   actor: { id: string; username: string; fullName: string } | null;
+}
+
+// ───── Sổ điểm lớp ─────
+
+export interface AssessmentCategory {
+  id: string;
+  name: string;
+  weight: number;
+  headerFill: string;
+  headerFont: string;
+  sortOrder: number;
+  examCount: number;
+}
+
+export interface AttendanceCode {
+  code: string;
+  label: string;
+  present: boolean;
+  fill?: string;
+  font?: string;
+}
+
+export interface HomeworkCode {
+  code: string;
+  label: string;
+  fill?: string;
+  font?: string;
+}
+
+export interface GradebookTemplate {
+  title: string;
+  header: { fill: string; font: string };
+  sessionHeader: { fill: string; font: string };
+  homeworkHeader: { fill: string; font: string };
+  scoreHeader: { fill: string; font: string };
+  scoreColumnFill: string;
+  lowScore: { below: number; fill: string; font: string };
+  highlightLowAverage: boolean;
+  averageDecimals: number;
+  showStudentCode: boolean;
+  attendanceCodes: AttendanceCode[];
+  homeworkCodes: HomeworkCode[];
+}
+
+export type GbColumnKind = 'stt' | 'studentCode' | 'fullName' | 'average' | 'rank' | 'attendance' | 'homework' | 'score' | 'total';
+
+export interface GbColumn {
+  key: string;
+  kind: GbColumnKind;
+  title: string;
+  subtitle?: string;
+  width: number;
+  header: { fill: string; font: string };
+  sessionId?: string;
+  examId?: string;
+  gradingMode?: GradingMode;
+  maxScore?: number;
+  weight?: number;
+}
+
+export interface GbCell {
+  value: string | number | null;
+  style?: CellStyle;
+  submissionId?: string | null;
+  pending?: boolean;
+}
+
+export interface GbRow {
+  key: string;
+  studentId: string;
+  inClass: boolean;
+  cells: Record<string, GbCell>;
+}
+
+export interface Gradebook {
+  title: string;
+  subtitle: string;
+  columns: GbColumn[];
+  rows: GbRow[];
+  attendanceCodes: AttendanceCode[];
+  homeworkCodes: HomeworkCode[];
+  lowScore: GradebookTemplate['lowScore'];
+  scoreColumnFill: string;
+  averageDecimals: number;
 }

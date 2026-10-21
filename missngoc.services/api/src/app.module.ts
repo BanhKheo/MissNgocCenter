@@ -13,6 +13,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ClassesModule } from './modules/classes/classes.module';
 import { ExamsModule } from './modules/exams/exams.module';
+import { GradebookModule } from './modules/gradebook/gradebook.module';
 import { GradingModule } from './modules/grading/grading.module';
 import { IamModule } from './modules/iam/iam.module';
 import { ImportsModule } from './modules/imports/imports.module';
@@ -40,6 +41,7 @@ import { QueueModule } from './queue/queue.module';
     GradingModule,
     SubmissionsModule,
     ReportsModule,
+    GradebookModule,
   ],
   controllers: [HealthController, ServerInfoController],
   providers: [

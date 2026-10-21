@@ -80,18 +80,19 @@ enum ClassStatus {
 }
 
 model Class {
-  id          String       @id @default(uuid()) @db.Uuid
+  id          String         @id @default(uuid()) @db.Uuid
   name        String
   level       String?
-  teacherId   String?      @map("teacher_id") @db.Uuid
-  teacher     User?        @relation("ClassTeacher", fields: [teacherId], references: [id])
-  startDate   DateTime?    @map("start_date") @db.Date
-  endDate     DateTime?    @map("end_date") @db.Date
-  status      ClassStatus  @default(ACTIVE)
+  teacherId   String?        @map("teacher_id") @db.Uuid
+  teacher     User?          @relation("ClassTeacher", fields: [teacherId], references: [id])
+  startDate   DateTime?      @map("start_date") @db.Date
+  endDate     DateTime?      @map("end_date") @db.Date
+  status      ClassStatus    @default(ACTIVE)
   enrollments Enrollment[]
   exams       Exam[]
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  sessions    ClassSession[]
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
 
   @@map("classes")
 }
@@ -104,6 +105,7 @@ model Student {
   parentPhone String?      @map("parent_phone")
   enrollments Enrollment[]
   submissions Submission[]
+  attendances Attendance[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -131,23 +133,48 @@ enum ExamStatus {
   ARCHIVED
 }
 
+// AI: chụp ảnh, AI đọc và chấm theo đáp án. MANUAL: giáo viên nhập điểm (bài nói, viết, kiểm tra nhỏ)
+enum GradingMode {
+  AI
+  MANUAL
+}
+
+// Loại bài và hệ số mặc định khi tính điểm trung bình, ví dụ Cuối unit x2, Midterm x3
+model AssessmentCategory {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String   @unique
+  weight     Decimal  @default(1) @db.Decimal(5, 2)
+  headerFill String   @default("#E2EFDA") @map("header_fill") // màu tiêu đề cột điểm trong sổ điểm
+  headerFont String   @default("#000000") @map("header_font")
+  sortOrder  Int      @default(0) @map("sort_order")
+  exams      Exam[]
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("assessment_categories")
+}
+
 model Exam {
-  id            String       @id @default(uuid()) @db.Uuid
-  classId       String       @map("class_id") @db.Uuid
-  class         Class        @relation(fields: [classId], references: [id])
+  id            String              @id @default(uuid()) @db.Uuid
+  classId       String              @map("class_id") @db.Uuid
+  class         Class               @relation(fields: [classId], references: [id])
   title         String
-  examDate      DateTime     @map("exam_date") @db.Date
-  questionCount Int          @map("question_count")
-  options       String       @default("ABCD") // ABCD hoặc ABCDE
-  maxScore      Decimal      @default(10) @map("max_score") @db.Decimal(5, 2)
-  layoutHint    String?      @map("layout_hint") // ví dụ: 40 câu, 2 cột, mỗi câu 4 ô A–D
-  status        ExamStatus   @default(OPEN)
-  createdById   String?      @map("created_by") @db.Uuid
+  examDate      DateTime            @map("exam_date") @db.Date
+  gradingMode   GradingMode         @default(AI) @map("grading_mode")
+  categoryId    String?             @map("category_id") @db.Uuid
+  category      AssessmentCategory? @relation(fields: [categoryId], references: [id])
+  weight        Decimal?            @db.Decimal(5, 2) // hệ số riêng; null thì lấy hệ số của loại bài
+  questionCount Int                 @map("question_count") // bài nhập điểm tay: 0
+  options       String              @default("ABCD") // ABCD hoặc ABCDE
+  maxScore      Decimal             @default(10) @map("max_score") @db.Decimal(5, 2)
+  layoutHint    String?             @map("layout_hint") // ví dụ: 40 câu, 2 cột, mỗi câu 4 ô A–D
+  status        ExamStatus          @default(OPEN)
+  createdById   String?             @map("created_by") @db.Uuid
   answerKeys    AnswerKey[]
   submissions   Submission[]
   gradingRuns   GradingRun[]
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
 
   @@index([classId])
   @@map("exams")
@@ -245,17 +272,17 @@ model SubmissionImage {
 
 // Lưu nguyên kết quả AI để truy vết và tính chi phí
 model Extraction {
-  id           String     @id @default(uuid()) @db.Uuid
-  submissionId String     @map("submission_id") @db.Uuid
-  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  engine       String
-  model        String
-  promptVersion String    @map("prompt_version")
-  rawJson      Json       @map("raw_json")
-  inputTokens  Int?       @map("input_tokens")
-  outputTokens Int?       @map("output_tokens")
-  durationMs   Int        @map("duration_ms")
-  createdAt    DateTime   @default(now()) @map("created_at")
+  id            String     @id @default(uuid()) @db.Uuid
+  submissionId  String     @map("submission_id") @db.Uuid
+  submission    Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  engine        String
+  model         String
+  promptVersion String     @map("prompt_version")
+  rawJson       Json       @map("raw_json")
+  inputTokens   Int?       @map("input_tokens")
+  outputTokens  Int?       @map("output_tokens")
+  durationMs    Int        @map("duration_ms")
+  createdAt     DateTime   @default(now()) @map("created_at")
 
   @@index([submissionId])
   @@map("extractions")
@@ -299,6 +326,37 @@ model GradingRun {
 
   @@index([examId])
   @@map("grading_runs")
+}
+
+// ───────────── Buổi học, điểm danh, bài tập về nhà ─────────────
+
+// Mỗi buổi học là một ngày; buổi không kiểm tra thì chỉ có điểm danh và bài tập
+model ClassSession {
+  id          String       @id @default(uuid()) @db.Uuid
+  classId     String       @map("class_id") @db.Uuid
+  class       Class        @relation(fields: [classId], references: [id])
+  date        DateTime     @db.Date
+  note        String?
+  attendances Attendance[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  @@unique([classId, date])
+  @@map("class_sessions")
+}
+
+// Mã điểm danh (O, P, K…) và mã bài tập (D, ND) cấu hình trong mẫu sổ điểm, nên lưu dạng chuỗi
+model Attendance {
+  sessionId   String       @map("session_id") @db.Uuid
+  session     ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  studentId   String       @map("student_id") @db.Uuid
+  student     Student      @relation(fields: [studentId], references: [id])
+  status      String?
+  homework    String?
+  updatedById String?      @map("updated_by") @db.Uuid
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@id([sessionId, studentId])
+  @@map("attendances")
 }
 
 // ───────────── Cấu hình, nhật ký ─────────────

@@ -1,17 +1,19 @@
-import { CameraOutlined, DeleteOutlined, EditOutlined, FileExcelOutlined, FormOutlined, InboxOutlined, TableOutlined } from '@ant-design/icons';
+import { BookOutlined, CameraOutlined, DeleteOutlined, FormOutlined, TableOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
-import { App, Button, Card, Col, Descriptions, Flex, Popconfirm, Row, Space, Statistic, Table, Tag } from 'antd';
-import dayjs from 'dayjs';
+import { App, Button, Card, Col, Descriptions, Flex, Row, Statistic, Table, Tag } from 'antd';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { DEFAULT_VERSION_URL_PARAM, PMS, RoutePaths, SUBMISSION_STATUS_LABEL, type SubmissionStatus } from '@missngoc/core';
+import { DEFAULT_VERSION_URL_PARAM, GRADING_MODE_LABEL, PMS, RoutePaths, SUBMISSION_STATUS_LABEL, type SubmissionStatus } from '@missngoc/core';
 import { del, errorMessage, patch } from '../../api/client';
 import { qk, useAnswerKeys, useExam, useSubmissions } from '../../api/queries';
 import type { AnswerKeyGrid, SubmissionRow } from '../../api/types';
+import { ArchiveButton, EditButton, ImportExcelButton, RowAction } from '../../components/buttons';
 import { ImportModal } from '../../components/ImportModal';
+import { PageHeader } from '../../components/PageHeader';
 import { StatusTag } from '../../components/StatusTag';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCan } from '../../store';
+import { formatDate } from '../../utils/format';
 import { AnswerKeyEditor } from './AnswerKeyEditor';
 import { ExamFormModal } from './ExamFormModal';
 import { keyStatus } from './ExamListPage';
@@ -47,6 +49,7 @@ export function ExamDetailPage() {
   const isMobile = useIsMobile();
   const canExam = useCan(PMS.EXAM_AD);
   const canGrade = useCan(PMS.GRD_USER);
+  const canAtt = useCan(PMS.ATT_USER);
   const canReport = useCan(PMS.RPT_AD, PMS.RPT_USER);
   const exam = useExam(id);
   const keys = useAnswerKeys(id, canExam || canGrade);
@@ -84,96 +87,114 @@ export function ExamDetailPage() {
   const e = exam.data;
   if (!e) return <Card loading />;
   const needsReview = (subs.data ?? []).filter((s) => s.status === 'NEEDS_REVIEW');
+  const manual = e.gradingMode === 'MANUAL';
+  // Bài nhập điểm tay: giáo viên có quyền điểm danh cũng sửa được
+  const canEditExam = canExam || (manual && canAtt);
+  const weightLabel = `x${e.effectiveWeight}${e.weight === null ? (e.category ? ' (theo loại bài)' : ' (mặc định)') : ' (hệ số riêng)'}`;
 
   return (
     <div>
-      <Flex justify="space-between" align="flex-start" wrap gap={8} style={{ marginBottom: 12 }}>
-        <div>
-          <Button type="link" style={{ padding: 0 }} onClick={() => navigate(RoutePaths.exams)}>
-            ← Bài kiểm tra
-          </Button>
-          <h1 className="page-title">
-            {e.title} {e.status === 'ARCHIVED' && <Tag>Đã lưu trữ</Tag>}
-          </h1>
-          <div className="muted">
-            <a onClick={() => navigate(RoutePaths.classDetail(e.class.id))}>{e.class.name}</a> · {dayjs(e.examDate).format('DD/MM/YYYY')}
-          </div>
-        </div>
-        <Space wrap>
-          {canGrade && (
-            <Button icon={<CameraOutlined />} onClick={() => navigate(`${RoutePaths.capture}?examId=${id}`)}>
-              Chụp bài
-            </Button>
-          )}
-          {canGrade && needsReview.length > 0 && (
-            <Button icon={<FormOutlined />} onClick={() => navigate(RoutePaths.examReview(id))}>
-              Duyệt ({needsReview.length})
-            </Button>
-          )}
-          {canReport && (
-            <Button type="primary" ghost icon={<TableOutlined />} onClick={() => navigate(RoutePaths.examReport(id))}>
-              Bảng điểm
-            </Button>
-          )}
-          {canExam && (
-            <>
-              <Button icon={<EditOutlined />} onClick={() => setEditExam(true)}>
-                Sửa
+      <PageHeader
+        back={{ label: 'Bài kiểm tra', to: RoutePaths.exams }}
+        title={e.title}
+        tags={e.status === 'ARCHIVED' && <Tag>Đã lưu trữ</Tag>}
+        subtitle={
+          <>
+            <a onClick={() => navigate(RoutePaths.classDetail(e.class.id))}>{e.class.name}</a> · {formatDate(e.examDate)}
+          </>
+        }
+        actions={
+          <>
+            {canGrade && !manual && (
+              <Button icon={<CameraOutlined />} onClick={() => navigate(`${RoutePaths.capture}?examId=${id}`)}>
+                Chụp bài
               </Button>
-              <Popconfirm title={e.status === 'ARCHIVED' ? 'Mở lại bài này?' : 'Lưu trữ bài này?'} okText="Đồng ý" cancelText="Huỷ" onConfirm={toggleArchive}>
-                <Button icon={<InboxOutlined />} />
-              </Popconfirm>
-            </>
-          )}
-        </Space>
-      </Flex>
+            )}
+            <Button icon={<BookOutlined />} onClick={() => navigate(RoutePaths.classGradebook(e.class.id))}>
+              Sổ điểm lớp
+            </Button>
+            {canGrade && needsReview.length > 0 && (
+              <Button icon={<FormOutlined />} onClick={() => navigate(RoutePaths.examReview(id))}>
+                Duyệt ({needsReview.length})
+              </Button>
+            )}
+            {canReport && (
+              <Button type="primary" ghost icon={<TableOutlined />} onClick={() => navigate(RoutePaths.examReport(id))}>
+                Bảng điểm
+              </Button>
+            )}
+            <EditButton isRender={canEditExam} onClick={() => setEditExam(true)} />
+            <ArchiveButton
+              isRender={canEditExam}
+              archived={e.status === 'ARCHIVED'}
+              confirmTitle={{ archive: 'Lưu trữ bài này? Bài sẽ ẩn khỏi danh sách, điểm vẫn giữ.', restore: 'Mở lại bài này?' }}
+              onConfirm={toggleArchive}
+            />
+          </>
+        }
+      />
 
       <Row gutter={[12, 12]}>
         <Col xs={24} lg={10}>
-          <Card title="Thông tin và đáp án" size="small">
+          <Card title={manual ? 'Thông tin' : 'Thông tin và đáp án'} size="small">
             <Descriptions size="small" column={1}>
-              <Descriptions.Item label="Số câu">
-                {e.questionCount} câu · lựa chọn {e.options.split('').join(', ')}
-              </Descriptions.Item>
+              <Descriptions.Item label="Cách chấm">{GRADING_MODE_LABEL[e.gradingMode]}</Descriptions.Item>
+              <Descriptions.Item label="Loại bài">{e.category?.name ?? 'Chưa chọn'}</Descriptions.Item>
+              <Descriptions.Item label="Hệ số">{weightLabel}</Descriptions.Item>
+              {!manual && (
+                <Descriptions.Item label="Số câu">
+                  {e.questionCount} câu · lựa chọn {e.options.split('').join(', ')}
+                </Descriptions.Item>
+              )}
               <Descriptions.Item label="Thang điểm">{e.maxScore}</Descriptions.Item>
               {e.layoutHint && <Descriptions.Item label="Bố cục">{e.layoutHint}</Descriptions.Item>}
-              <Descriptions.Item label="Đáp án">{keyStatus(e)}</Descriptions.Item>
+              {!manual && <Descriptions.Item label="Đáp án">{keyStatus(e)}</Descriptions.Item>}
             </Descriptions>
             {(keys.data ?? []).map((k) => (
-              <Flex key={k.versionCode} justify="space-between" align="center" style={{ padding: '6px 0', borderTop: '1px solid #f0f0f0' }}>
+              <Flex key={k.versionCode} className="row-divider" justify="space-between" align="center" gap={8}>
                 <div style={{ minWidth: 0 }}>
                   <b>{k.versionCode ? `Mã đề ${k.versionCode}` : 'Mã đề chung'}</b>
-                  <div className="muted" style={{ fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 12, wordBreak: 'break-all' }}>
+                  <div className="muted mono">
                     {k.items.map((i) => (i.kind === 'text' ? `[${i.correct.join('/')}]` : i.correct.join('/'))).join('')}
                   </div>
                 </div>
-                {canExam && (
-                  <Popconfirm title="Xoá đáp án mã đề này?" okText="Xoá" cancelText="Huỷ" onConfirm={() => deleteKey(k.versionCode)}>
-                    <Button size="small" type="text" danger icon={<DeleteOutlined />} />
-                  </Popconfirm>
-                )}
+                <RowAction
+                  isRender={canExam}
+                  icon={<DeleteOutlined />}
+                  label="Xoá đáp án mã đề này"
+                  danger
+                  confirm={{ title: 'Xoá đáp án mã đề này?', okText: 'Xoá' }}
+                  onClick={() => deleteKey(k.versionCode)}
+                />
               </Flex>
             ))}
-            {canExam && (
+            {canExam && !manual && (
               <Flex gap={8} wrap style={{ marginTop: 8 }}>
-                <Button icon={<EditOutlined />} onClick={() => setEditKeys(true)}>
-                  Nhập đáp án
-                </Button>
-                <Button icon={<FileExcelOutlined />} onClick={() => setImportKeys(true)}>
-                  Import Excel
-                </Button>
+                <EditButton text="Nhập đáp án" onClick={() => setEditKeys(true)} />
+                <ImportExcelButton onClick={() => setImportKeys(true)} />
               </Flex>
             )}
           </Card>
         </Col>
         <Col xs={24} lg={14}>
-          <Card title="Chấm bài" size="small">
+          <Card title={manual ? 'Nhập điểm' : 'Chấm bài'} size="small">
             <Flex wrap gap={16} style={{ marginBottom: 12 }}>
-              {COUNT_ORDER.filter((s) => e.counts[s] > 0 || s === 'GRADED').map((s) => (
-                <Statistic key={s} title={SUBMISSION_STATUS_LABEL[s]} value={e.counts[s]} />
-              ))}
+              {(manual ? (['NO_IMAGE', 'GRADED', 'ABSENT'] as const) : COUNT_ORDER)
+                .filter((s) => e.counts[s] > 0 || s === 'GRADED')
+                .map((s) => (
+                  <Statistic key={s} title={manual && s === 'NO_IMAGE' ? 'Chưa có điểm' : SUBMISSION_STATUS_LABEL[s]} value={e.counts[s]} />
+                ))}
             </Flex>
-            {(canGrade || canExam) && <GeneratePanel exam={e} canGenerate={canGrade && e.status === 'OPEN'} />}
+            {manual ? (
+              <Flex gap={8} wrap align="center">
+                <Button type="primary" icon={<BookOutlined />} onClick={() => navigate(RoutePaths.classGradebook(e.class.id))}>
+                  Nhập điểm trong sổ điểm
+                </Button>
+                <span className="muted">Chạm vào ô điểm của từng học sinh để nhập, đánh vắng hoặc xoá.</span>
+              </Flex>
+            ) : (
+              (canGrade || canExam) && <GeneratePanel exam={e} canGenerate={canGrade && e.status === 'OPEN'} />
+            )}
           </Card>
         </Col>
       </Row>

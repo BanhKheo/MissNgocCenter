@@ -1,7 +1,7 @@
-import { CheckOutlined, CloseOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { CheckOutlined, CloseOutlined, ExclamationCircleOutlined, StepForwardOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { Alert, App, Button, Card, Col, Flex, Input, Popover, Row, Segmented, Select, Space, Switch, Tabs, Tag } from 'antd';
+import { Alert, App, Button, Card, Col, Flex, Input, Popover, Row, Segmented, Select, Space, Switch, Tabs, Tag, Tooltip } from 'antd';
 import { Fragment, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MARK_STATUS_LABEL, MAX_TEXT_ANSWER, PMS, RoutePaths } from '@missngoc/core';
@@ -9,8 +9,8 @@ import { errorMessage, patch, post } from '../../api/client';
 import { qk, useSubmission, useSubmissions } from '../../api/queries';
 import type { SubmissionDetail } from '../../api/types';
 import { AuthImage } from '../../components/AuthImage';
+import { PageHeader } from '../../components/PageHeader';
 import { StatusTag } from '../../components/StatusTag';
-import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCan } from '../../store';
 
 /** Sửa câu điền từ: chép đúng chữ học sinh viết, kể cả sai chính tả */
@@ -25,9 +25,7 @@ function TextAnswerForm({ value, saving, onSave }: { value: string | null; savin
           Lưu
         </Button>
       </Space.Compact>
-      <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-        Chép đúng chữ trên bài, kể cả sai chính tả. Để trống là bỏ trống.
-      </div>
+      <p className="hint">Chép đúng chữ trên bài, kể cả sai chính tả. Để trống là bỏ trống.</p>
     </div>
   );
 }
@@ -41,7 +39,6 @@ export function SubmissionReviewPage() {
   const navigate = useNavigate();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
   const canEdit = useCan(PMS.GRD_USER);
   const sub = useSubmission(submissionId);
   const list = useSubmissions(examId);
@@ -145,12 +142,20 @@ export function SubmissionReviewPage() {
         const cell = (
           <div className={cls} onClick={() => canEdit && setOpenQ(a.q)}>
             <div className="q">
-              Câu {a.q} {a.isCorrect === true ? <CheckOutlined style={{ color: '#1e7e34' }} /> : a.isCorrect === false ? <CloseOutlined style={{ color: '#c0392b' }} /> : null}
+              Câu {a.q} {a.isCorrect === true ? <CheckOutlined className="text-success" /> : a.isCorrect === false ? <CloseOutlined className="text-danger" /> : null}
             </div>
             <div className="c">{a.finalChoice ?? '–'}</div>
+            {a.isCorrect === false && a.correct && a.correct.length > 0 && (
+              <Tooltip title={a.correct.length > 1 ? `Chấp nhận: ${a.correct.join(' / ')}` : undefined}>
+                <div className="ok">
+                  Đúng: {a.kind === 'text' ? a.correct[0] : a.correct.join('/')}
+                  {a.kind === 'text' && a.correct.length > 1 ? ' …' : ''}
+                </div>
+              </Tooltip>
+            )}
             {(a.needsReview || a.status !== 'clear') && (
               <div className="q">
-                {a.needsReview && <ExclamationCircleOutlined style={{ color: '#d48806' }} />} {MARK_STATUS_LABEL[a.status]}
+                {a.needsReview && <ExclamationCircleOutlined className="text-warning" />} {MARK_STATUS_LABEL[a.status]}
                 {a.reviewed && ' · đã duyệt'}
               </div>
             )}
@@ -162,7 +167,10 @@ export function SubmissionReviewPage() {
             trigger="click"
             open={openQ === a.q}
             onOpenChange={(o) => setOpenQ(o ? a.q : null)}
-            title={`Câu ${a.q}: AI đọc ${a.detectedChoice === null ? 'không có' : a.kind === 'text' ? `"${a.detectedChoice}"` : a.detectedChoice} (${MARK_STATUS_LABEL[a.status]})`}
+            title={
+              `Câu ${a.q}: AI đọc ${a.detectedChoice === null ? 'không có' : a.kind === 'text' ? `"${a.detectedChoice}"` : a.detectedChoice} (${MARK_STATUS_LABEL[a.status]})` +
+              (a.correct?.length ? ` · Đáp án: ${a.correct.join(a.kind === 'text' ? ' / ' : '/')}` : '')
+            }
             content={
               a.kind === 'text' ? (
                 <TextAnswerForm key={`${a.q}:${a.finalChoice}`} value={a.finalChoice} saving={saving} onSave={(v) => setAnswer(a.q, v)} />
@@ -187,41 +195,40 @@ export function SubmissionReviewPage() {
 
   return (
     <div>
-      <Flex justify="space-between" align="flex-start" wrap gap={8} style={{ marginBottom: 8 }}>
-        <div>
-          <Button type="link" style={{ padding: 0 }} onClick={() => navigate(RoutePaths.examDetail(examId))}>
-            ← {d.exam.title}
-          </Button>
-          <h1 className="page-title" style={{ fontSize: isMobile ? 20 : 24 }}>
-            {d.student.fullName}
-          </h1>
+      <PageHeader
+        back={{ label: d.exam.title, to: RoutePaths.examDetail(examId) }}
+        title={d.student.fullName}
+        subtitle={
           <Space wrap>
             <StatusTag status={d.status} error={d.lastError} />
             {d.result && (
-              <Tag color="blue" style={{ fontSize: 15, padding: '2px 10px' }}>
+              <Tag color="blue" className="score-tag">
                 {d.result.score} điểm · đúng {d.result.correctCount}/{d.exam.questionCount}
               </Tag>
             )}
             {uncertainCount > 0 && <Tag color="gold">{uncertainCount} câu cần duyệt</Tag>}
           </Space>
-        </div>
-        {canEdit && (
-          <Space wrap>
-            <Button
-              onClick={() => {
-                const next = nextToReview();
-                if (next) navigate(RoutePaths.submissionReview(examId, next));
-                else navigate(RoutePaths.examDetail(examId));
-              }}
-            >
-              Bỏ qua
-            </Button>
-            <Button type="primary" loading={saving} onClick={confirm} disabled={d.status === 'GRADED' && !d.nameMismatch}>
-              Duyệt xong
-            </Button>
-          </Space>
-        )}
-      </Flex>
+        }
+        actions={
+          canEdit && (
+            <>
+              <Button
+                icon={<StepForwardOutlined />}
+                onClick={() => {
+                  const next = nextToReview();
+                  if (next) navigate(RoutePaths.submissionReview(examId, next));
+                  else navigate(RoutePaths.examDetail(examId));
+                }}
+              >
+                Bỏ qua
+              </Button>
+              <Button type="primary" icon={<CheckOutlined />} loading={saving} onClick={confirm} disabled={d.status === 'GRADED' && !d.nameMismatch}>
+                Duyệt xong
+              </Button>
+            </>
+          )
+        }
+      />
 
       {d.nameMismatch && (
         <Alert
@@ -262,7 +269,7 @@ export function SubmissionReviewPage() {
               <Flex justify="space-between" align="center" wrap gap={8}>
                 {versionSelect || <span>Kết quả từng câu</span>}
                 {uncertainCount > 0 && (
-                  <span style={{ fontWeight: 'normal', fontSize: 13 }}>
+                  <span className="card-title-control">
                     Chỉ câu cần duyệt <Switch size="small" checked={onlyUncertain} onChange={setOnlyUncertain} />
                   </span>
                 )}
@@ -271,7 +278,7 @@ export function SubmissionReviewPage() {
           >
             {grid}
             <p className="muted" style={{ marginTop: 8, marginBottom: 0 }}>
-              Ô vàng là câu AI không chắc. Chạm vào ô để sửa. Bấm "Duyệt xong" để giữ nguyên các câu còn lại.
+              Ô vàng là câu AI không chắc. Câu sai có dòng "Đúng: …" là đáp án để so. Chạm vào ô để sửa. Bấm "Duyệt xong" để giữ nguyên các câu còn lại.
             </p>
           </Card>
         </Col>

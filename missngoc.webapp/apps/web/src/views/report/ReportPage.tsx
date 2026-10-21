@@ -1,5 +1,4 @@
-import { DownloadOutlined } from '@ant-design/icons';
-import { App, Button, Card, Flex, Progress, Space, Statistic, Table, Tabs, Tag } from 'antd';
+import { App, Card, Flex, Progress, Space, Statistic, Table, Tabs, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -7,6 +6,8 @@ import { PMS, RoutePaths } from '@missngoc/core';
 import { downloadBlob, errorMessage, saveBlob } from '../../api/client';
 import { useReport, useStats } from '../../api/queries';
 import type { CellStyle, ReportGrid } from '../../api/types';
+import { ExportExcelButton } from '../../components/buttons';
+import { PageHeader } from '../../components/PageHeader';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCan } from '../../store';
 
@@ -62,18 +63,12 @@ export function ReportPage() {
 
   return (
     <div>
-      <Flex justify="space-between" align="flex-start" wrap gap={8} style={{ marginBottom: 12 }}>
-        <div>
-          <Button type="link" style={{ padding: 0 }} onClick={() => navigate(RoutePaths.examDetail(id))}>
-            ← Bài kiểm tra
-          </Button>
-          <h1 className="page-title">{g.title}</h1>
-          <div className="muted">{g.subtitle}</div>
-        </div>
-        <Button type="primary" icon={<DownloadOutlined />} loading={exporting} onClick={exportXlsx}>
-          Xuất Excel
-        </Button>
-      </Flex>
+      <PageHeader
+        back={{ label: 'Bài kiểm tra', to: RoutePaths.examDetail(id) }}
+        title={g.title}
+        subtitle={g.subtitle}
+        actions={<ExportExcelButton loading={exporting} onClick={exportXlsx} />}
+      />
 
       <Card size="small" style={{ marginBottom: 12 }}>
         <Flex wrap gap={24}>
@@ -107,7 +102,7 @@ export function ReportPage() {
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ ...css(r.cells.score?.style), fontSize: 20, fontWeight: 700, padding: '0 8px', borderRadius: 6 }}>
+                          <div className="report-score" style={css(r.cells.score?.style)}>
                             {r.cells.score?.value ?? '—'}
                           </div>
                           <div className="muted">{r.cells.rank?.value}</div>

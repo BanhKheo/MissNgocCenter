@@ -36,7 +36,7 @@ export function LoginPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 16 }}>
       <Card style={{ width: '100%', maxWidth: 380 }}>
-        <Typography.Title level={3} style={{ textAlign: 'center', color: '#1F4E78', marginBottom: 0 }}>
+        <Typography.Title level={3} className="brand brand-login">
           MissNgoc Grader
         </Typography.Title>
         <p className="muted" style={{ textAlign: 'center', marginTop: 4 }}>

@@ -5,6 +5,7 @@ export const RoutePaths = {
   capture: '/capture',
   classes: '/classes',
   classDetail: (id: string) => `/classes/${id}`,
+  classGradebook: (id: string) => `/classes/${id}/gradebook`,
   exams: '/exams',
   examDetail: (id: string) => `/exams/${id}`,
   examReview: (id: string) => `/exams/${id}/review`,
@@ -14,4 +15,5 @@ export const RoutePaths = {
   roles: '/admin/roles',
   auditLogs: '/admin/audit-logs',
   reportTemplate: '/admin/report-template',
+  gradebookSettings: '/admin/gradebook',
 } as const;

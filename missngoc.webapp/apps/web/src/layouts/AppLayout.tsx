@@ -1,6 +1,7 @@
 import {
   AuditOutlined,
   BgColorsOutlined,
+  BookOutlined,
   CameraOutlined,
   FileDoneOutlined,
   KeyOutlined,
@@ -28,13 +29,13 @@ const MAIN: Item[] = [
     key: RoutePaths.exams,
     label: 'Bài kiểm tra',
     icon: <FileDoneOutlined />,
-    perms: [PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER, PMS.CLS_AD],
+    perms: [PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER, PMS.CLS_AD, PMS.ATT_USER],
   },
   {
     key: RoutePaths.classes,
     label: 'Lớp học',
     icon: <TeamOutlined />,
-    perms: [PMS.CLS_AD, PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER],
+    perms: [PMS.CLS_AD, PMS.ATT_USER, PMS.EXAM_AD, PMS.GRD_USER, PMS.RPT_AD, PMS.RPT_USER],
   },
 ];
 
@@ -42,6 +43,7 @@ const ADMIN: Item[] = [
   { key: RoutePaths.users, label: 'Tài khoản', icon: <UserOutlined />, perms: [PMS.USER_AD] },
   { key: RoutePaths.roles, label: 'Vai trò và quyền', icon: <SafetyOutlined />, perms: [PMS.USER_AD] },
   { key: RoutePaths.reportTemplate, label: 'Mẫu bảng điểm', icon: <BgColorsOutlined />, perms: [PMS.SYS_AD] },
+  { key: RoutePaths.gradebookSettings, label: 'Sổ điểm và hệ số', icon: <BookOutlined />, perms: [PMS.SYS_AD] },
   { key: RoutePaths.auditLogs, label: 'Nhật ký thao tác', icon: <AuditOutlined />, perms: [PMS.SYS_AD] },
 ];
 
@@ -89,38 +91,22 @@ export function AppLayout() {
   };
 
   const menu = <Menu mode="inline" selectedKeys={[selected]} items={items} onClick={onMenu} style={{ borderInlineEnd: 0 }} />;
-  const brand = (
-    <div style={{ fontWeight: 700, fontSize: 18, color: '#1F4E78', padding: '16px 20px', whiteSpace: 'nowrap' }}>MissNgoc Grader</div>
-  );
-
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {!isMobile && (
-        <Sider width={220} theme="light" style={{ borderRight: '1px solid #eee' }}>
-          {brand}
+        <Sider width={220} theme="light" className="app-sider">
+          <div className="brand brand-sider">MissNgoc Grader</div>
           {menu}
         </Sider>
       )}
       <Layout>
-        <Header
-          style={{
-            background: '#fff',
-            padding: isMobile ? '0 8px' : '0 20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            borderBottom: '1px solid #eee',
-            position: 'sticky',
-            top: 0,
-            zIndex: 10,
-          }}
-        >
-          {isMobile && <Button type="text" icon={<MenuOutlined />} onClick={() => setDrawerOpen(true)} aria-label="Menu" />}
-          {isMobile && <span style={{ fontWeight: 700, color: '#1F4E78' }}>MissNgoc Grader</span>}
+        <Header className="app-header" style={{ padding: isMobile ? '0 8px' : '0 20px' }}>
+          {isMobile && <Button type="text" icon={<MenuOutlined />} onClick={() => setDrawerOpen(true)} aria-label="Mở menu" />}
+          {isMobile && <span className="brand">MissNgoc Grader</span>}
           <div style={{ flex: 1 }} />
           <Dropdown menu={userMenu} trigger={['click']}>
             <Button type="text" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Avatar size="small" style={{ background: '#1F4E78' }}>
+              <Avatar size="small" className="app-avatar">
                 {profile.fullName.split(' ').pop()?.charAt(0)}
               </Avatar>
               {!isMobile && profile.fullName}

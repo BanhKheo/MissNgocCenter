@@ -6,6 +6,7 @@
  */
 import { PrismaClient } from '@prisma/client';
 import { APP_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS, ROLE_DESCRIPTIONS, ROLE_NAME } from '@missngoc/core';
+import { DEFAULT_CATEGORIES } from '../modules/gradebook/gradebook-template';
 import { DEFAULT_REPORT_TEMPLATE } from '../modules/reports/report-template';
 import { loadEnv } from './load-env';
 
@@ -56,6 +57,12 @@ async function main() {
     if (!(await prisma.reportTemplate.findFirst({ where: { isDefault: true } }))) {
       await prisma.reportTemplate.create({ data: { name: 'Mặc định', isDefault: true, config: DEFAULT_REPORT_TEMPLATE } });
       console.log('Tạo mẫu bảng điểm mặc định');
+    }
+
+    // Loại bài và hệ số mặc định: chỉ tạo khi chưa có loại nào, để không ghi đè cấu hình Admin đã sửa
+    if ((await prisma.assessmentCategory.count()) === 0) {
+      await prisma.assessmentCategory.createMany({ data: DEFAULT_CATEGORIES });
+      console.log(`Tạo ${DEFAULT_CATEGORIES.length} loại bài mặc định`);
     }
     console.log('Seed xong');
   } finally {
